@@ -2,7 +2,7 @@
 
 - [ ] **Dependency Graph Visualization:** A visual representation of the dependency tree for each project, making it easier to identify potential conflicts or circular dependencies.
 - [ ] **Security Vulnerability Scanning:** Integrate with vulnerability databases to identify and flag vulnerable packages.
-- [ ] **License Management for projects:** Display and manage the licenses of projects.
+- [x] **License Management for projects:** Display and manage the licenses of projects.
 - [ ] **License Management for dependecies:** Display and manage the licenses of installed packages, ensuring compliance with project requirements.
 - [ ] **Interactive Dependency Analysis:** Allow users to explore dependencies, view their descriptions, and analyze their usage within the project.
 - [ ] **Automated Dependency Updates:** Automatically update dependencies based on user-defined schedules or triggers.

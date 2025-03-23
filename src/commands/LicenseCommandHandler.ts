@@ -2,15 +2,6 @@ import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 
 export class LicenseCommandHandler {
-  private readonly LICENSE_URLS: Record<string, string> = {
-    MIT: "https://spdx.org/licenses/MIT.txt",
-    "Apache-2.0": "https://spdx.org/licenses/Apache-2.0.txt",
-    "GPL-3.0": "https://spdx.org/licenses/GPL-3.0-only.txt",
-    "BSD-3-Clause": "https://spdx.org/licenses/BSD-3-Clause.txt",
-    ISC: "https://spdx.org/licenses/ISC.txt",
-    Unlicense: "https://spdx.org/licenses/Unlicense.txt",
-  };
-
   constructor(private projectTreeProvider: ProjectTreeProvider) {}
 
   public registerCommands(context: vscode.ExtensionContext): void {
@@ -122,33 +113,28 @@ export class LicenseCommandHandler {
       );
 
       // Now handle the LICENSE file
-      if (this.LICENSE_URLS[newLicense]) {
-        try {
-          const licenseContent = await this.fetchLicenseTemplate(newLicense);
-          if (licenseContent) {
-            const licenseFileUri = vscode.Uri.joinPath(projectUri, "LICENSE");
-            const finalContent = licenseContent.replace(
-              /\[NAME\]/g,
-              authorName,
-            );
+      try {
+        const licenseContent = await this.fetchLicenseTemplate(newLicense);
+        if (licenseContent) {
+          const licenseFileUri = vscode.Uri.joinPath(projectUri, "LICENSE");
+          const finalContent = licenseContent.replace(/\[NAME\]/g, authorName);
 
-            // Create or update the LICENSE file
-            await vscode.workspace.fs.writeFile(
-              licenseFileUri,
-              Buffer.from(finalContent, "utf-8"),
-            );
-
-            vscode.window.showInformationMessage(
-              `License file created/updated with ${newLicense} template`,
-            );
-          } else {
-            throw new Error("Could not fetch license content");
-          }
-        } catch (error) {
-          vscode.window.showWarningMessage(
-            `Could not create LICENSE file: ${error}. Only package.json has been updated.`,
+          // Create or update the LICENSE file
+          await vscode.workspace.fs.writeFile(
+            licenseFileUri,
+            Buffer.from(finalContent, "utf-8"),
           );
+
+          vscode.window.showInformationMessage(
+            `License file created/updated with ${newLicense} template`,
+          );
+        } else {
+          throw new Error("Could not fetch license content");
         }
+      } catch (error) {
+        vscode.window.showWarningMessage(
+          `Could not create LICENSE file: ${error}. Only package.json has been updated.`,
+        );
       }
 
       this.projectTreeProvider.refresh();
