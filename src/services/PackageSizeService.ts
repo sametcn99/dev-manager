@@ -1,6 +1,4 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
 
 export class PackageSizeService {
   // Get the size of a specific package
@@ -8,8 +6,12 @@ export class PackageSizeService {
     projectPath: string,
     packageName: string,
   ): Promise<{ size: number; files: number }> {
-    const packagePath = path.join(projectPath, "node_modules", packageName);
-    return this.calculateDirectorySize(packagePath);
+    const packageUri = vscode.Uri.joinPath(
+      vscode.Uri.file(projectPath),
+      "node_modules",
+      packageName,
+    );
+    return this.calculateDirectorySize(packageUri);
   }
 
   // Get total size of all dependencies
@@ -17,40 +19,43 @@ export class PackageSizeService {
     totalSize: number;
     packages: { name: string; size: number; files: number }[];
   }> {
-    const nodeModulesPath = path.join(projectPath, "node_modules");
+    const nodeModulesUri = vscode.Uri.joinPath(
+      vscode.Uri.file(projectPath),
+      "node_modules",
+    );
     let totalSize = 0;
     const packages: { name: string; size: number; files: number }[] = [];
 
     try {
-      const entries = await fs.promises.readdir(nodeModulesPath, {
-        withFileTypes: true,
-      });
+      const entries = await vscode.workspace.fs.readDirectory(nodeModulesUri);
 
-      for (const entry of entries) {
+      for (const [entryName, entryType] of entries) {
         if (
-          entry.isDirectory() &&
-          !entry.name.startsWith(".") &&
-          !entry.name.startsWith("@")
+          entryType === vscode.FileType.Directory &&
+          !entryName.startsWith(".") &&
+          !entryName.startsWith("@")
         ) {
           const packageStats = await this.getPackageSize(
             projectPath,
-            entry.name,
+            entryName,
           );
           packages.push({
-            name: entry.name,
+            name: entryName,
             ...packageStats,
           });
           totalSize += packageStats.size;
-        } else if (entry.isDirectory() && entry.name.startsWith("@")) {
+        } else if (
+          entryType === vscode.FileType.Directory &&
+          entryName.startsWith("@")
+        ) {
           // Handle scoped packages
-          const scopePath = path.join(nodeModulesPath, entry.name);
-          const scopedEntries = await fs.promises.readdir(scopePath, {
-            withFileTypes: true,
-          });
+          const scopeUri = vscode.Uri.joinPath(nodeModulesUri, entryName);
+          const scopedEntries =
+            await vscode.workspace.fs.readDirectory(scopeUri);
 
-          for (const scopedEntry of scopedEntries) {
-            if (scopedEntry.isDirectory()) {
-              const packageName = `${entry.name}/${scopedEntry.name}`;
+          for (const [scopedEntryName, scopedEntryType] of scopedEntries) {
+            if (scopedEntryType === vscode.FileType.Directory) {
+              const packageName = `${entryName}/${scopedEntryName}`;
               const packageStats = await this.getPackageSize(
                 projectPath,
                 packageName,
@@ -66,7 +71,7 @@ export class PackageSizeService {
       }
     } catch (error) {
       vscode.window.showErrorMessage(
-        `Error analyzing package sizes in ${nodeModulesPath}: ${error}`,
+        `Error analyzing package sizes in ${nodeModulesUri.fsPath}: ${error}`,
       );
       throw error;
     }
@@ -78,26 +83,24 @@ export class PackageSizeService {
   }
 
   private async calculateDirectorySize(
-    dirPath: string,
+    dirUri: vscode.Uri,
   ): Promise<{ size: number; files: number }> {
     let totalSize = 0;
     let totalFiles = 0;
 
     try {
-      const entries = await fs.promises.readdir(dirPath, {
-        withFileTypes: true,
-      });
+      const entries = await vscode.workspace.fs.readDirectory(dirUri);
 
-      for (const entry of entries) {
-        const fullPath = path.join(dirPath, entry.name);
+      for (const [entryName, entryType] of entries) {
+        const fullPath = vscode.Uri.joinPath(dirUri, entryName);
 
-        if (entry.isDirectory()) {
+        if (entryType === vscode.FileType.Directory) {
           const { size, files } = await this.calculateDirectorySize(fullPath);
           totalSize += size;
           totalFiles += files;
-        } else if (entry.isFile()) {
-          const stats = await fs.promises.stat(fullPath);
-          totalSize += stats.size;
+        } else if (entryType === vscode.FileType.File) {
+          const stat = await vscode.workspace.fs.stat(fullPath);
+          totalSize += stat.size;
           totalFiles++;
         }
       }

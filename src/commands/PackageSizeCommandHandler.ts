@@ -90,9 +90,18 @@ export class PackageSizeCommandHandler {
     }
   }
 
-  private async handleAnalyzeDependenciesSizes(info: { path: string }) {
-    if (!info?.path) {
-      return;
+  private async handleAnalyzeDependenciesSizes(info?: { path: string }) {
+    // If path isn't provided directly, get the first active project path from the tree provider
+    let projectPath = info?.path;
+
+    if (!projectPath) {
+      const projects = await this.projectTreeProvider.getAllProjects();
+      if (projects && projects.length > 0) {
+        projectPath = projects[0].path;
+      } else {
+        vscode.window.showErrorMessage("No projects found to analyze");
+        return;
+      }
     }
 
     // Show immediate feedback
@@ -106,7 +115,7 @@ export class PackageSizeCommandHandler {
 
     try {
       const analysis = await vscode.window.withProgress(progressOptions, () =>
-        this.packageSizeService.getTotalDependenciesSize(info.path),
+        this.packageSizeService.getTotalDependenciesSize(projectPath!),
       );
 
       const formattedTotalSize = this.packageSizeService.formatSize(
