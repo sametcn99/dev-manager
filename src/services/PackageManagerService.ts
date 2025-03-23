@@ -83,19 +83,50 @@ export class PackageManagerService {
   }
 
   public async getPackageVersions(packageName: string): Promise<string[]> {
-    try {
-      const versions = await vscode.commands.executeCommand<string[]>(
-        "npm.getVersions",
-        packageName,
+    return new Promise((resolve) => {
+      const { exec } = require("child_process");
+      exec(
+        `npm view ${packageName} versions --json`,
+        (error: any, stdout: string) => {
+          try {
+            if (error) {
+              console.error(
+                `Error fetching versions for ${packageName}:`,
+                error,
+              );
+              resolve([]);
+              return;
+            }
+
+            // Parse the output to get versions
+            let versions: string[] = [];
+            try {
+              // The output could be an array or a single string
+              const parsed = JSON.parse(stdout);
+              versions = Array.isArray(parsed) ? parsed : [parsed];
+            } catch (parseError) {
+              console.error(
+                `Error parsing versions for ${packageName}:`,
+                parseError,
+              );
+              resolve([]);
+              return;
+            }
+
+            // Sort versions in descending order
+            return resolve(
+              versions.sort((a: string, b: string) => semver.rcompare(a, b)),
+            );
+          } catch (err) {
+            console.error(
+              `Unexpected error fetching versions for ${packageName}:`,
+              err,
+            );
+            resolve([]);
+          }
+        },
       );
-      if (!versions) {
-        return [];
-      }
-      return versions.sort((a: string, b: string) => semver.rcompare(a, b));
-    } catch (error) {
-      console.error(`Error fetching versions for ${packageName}:`, error);
-      return [];
-    }
+    });
   }
 
   public async updateDependencyVersion(
