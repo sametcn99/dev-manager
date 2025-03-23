@@ -1,0 +1,154 @@
+{
+  "name": "dev-manager",
+  "displayName": "dev-manager",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:devManagerProjects"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dev-manager",
+          "title": "Dev Manager",
+          "icon": "media/dependency.svg"
+        }
+      ]
+    },
+    "views": {
+      "dev-manager": [
+        {
+          "id": "devManagerProjects",
+          "name": "Projects",
+          "icon": "media/dependency.svg"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "devManagerProjects",
+          "name": "Dev Manager",
+          "icon": "media/dependency.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "dev-manager.refreshProjects",
+        "title": "Refresh Projects",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "dev-manager.installDependencies",
+        "title": "Install Dependencies",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "dev-manager.updateDependencies",
+        "title": "Update Dependencies",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "dev-manager.cleanNodeModules",
+        "title": "Clean node_modules",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "dev-manager.installAllDependencies",
+        "title": "Install All Dependencies",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "dev-manager.updateAllDependencies",
+        "title": "Update All Dependencies",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "dev-manager.changePackageManager",
+        "title": "Change Package Manager",
+        "icon": "$(gear)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "dev-manager.refreshProjects",
+          "when": "view == devManagerProjects",
+          "group": "navigation"
+        },
+        {
+          "command": "dev-manager.installAllDependencies",
+          "when": "view == devManagerProjects",
+          "group": "1_modification"
+        },
+        {
+          "command": "dev-manager.updateAllDependencies",
+          "when": "view == devManagerProjects",
+          "group": "1_modification"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "dev-manager.installDependencies",
+          "when": "view == devManagerProjects && viewItem == project",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.updateDependencies",
+          "when": "view == devManagerProjects && viewItem == project",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.cleanNodeModules",
+          "when": "view == devManagerProjects && viewItem == project",
+          "group": "2_modification"
+        },
+        {
+          "command": "dev-manager.changePackageManager",
+          "when": "view == devManagerProjects && viewItem == project",
+          "group": "1_modification"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/semver": "^7.5.8",
+    "@types/vscode": "^1.98.0",
+    "@typescript-eslint/eslint-plugin": "^8.25.0",
+    "@typescript-eslint/parser": "^8.25.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.21.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "3.5.3",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "semver": "^7.7.1"
+  }
+}
