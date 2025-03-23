@@ -29,21 +29,8 @@ export class LicenseCommandHandler {
       }
 
       const content = response.data.body;
-      const currentYear = new Date().getFullYear();
-      return content
-        .trim()
-        .replace(/\r\n/g, "\n")
-        .replace(/\[year\]/gi, currentYear.toString())
-        .replace(/\[yyyy\]/gi, currentYear.toString())
-        .replace(/<year>/gi, currentYear.toString())
-        .replace(/\[name of copyright owner\]/gi, "[NAME]")
-        .replace(/<name of author>/gi, "[NAME]")
-        .replace(/\[fullname\]/gi, "[NAME]")
-        .replace(/<copyright holders>/gi, "[NAME]")
-        .replace(/<copyright holder>/gi, "[NAME]")
-        .replace(/{{year}}/gi, currentYear.toString())
-        .replace(/{{fullname}}/gi, "[NAME]")
-        .trim();
+
+      return content;
     } catch (error) {
       console.error(
         `Error fetching license template for ${license} using Octokit: ${error}`,
@@ -98,12 +85,6 @@ export class LicenseCommandHandler {
       const content = await vscode.workspace.fs.readFile(packageJsonUri);
       const packageJson = JSON.parse(content.toString());
 
-      // Get author name from package.json or prompt user
-      const authorName =
-        typeof packageJson.author === "string"
-          ? packageJson.author
-          : packageJson.author?.name || (await this.promptForAuthorName());
-
       packageJson.license = newLicense;
 
       // First update package.json
@@ -117,12 +98,11 @@ export class LicenseCommandHandler {
         const licenseContent = await this.fetchLicenseTemplate(newLicense);
         if (licenseContent) {
           const licenseFileUri = vscode.Uri.joinPath(projectUri, "LICENSE");
-          const finalContent = licenseContent.replace(/\[NAME\]/g, authorName);
 
           // Create or update the LICENSE file
           await vscode.workspace.fs.writeFile(
             licenseFileUri,
-            Buffer.from(finalContent, "utf-8"),
+            Buffer.from(licenseContent, "utf-8"),
           );
 
           vscode.window.showInformationMessage(
@@ -144,14 +124,5 @@ export class LicenseCommandHandler {
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to update license: ${error}`);
     }
-  }
-
-  private async promptForAuthorName(): Promise<string> {
-    const name = await vscode.window.showInputBox({
-      prompt: "Enter the copyright holder's name",
-      placeHolder: "Your Name",
-      value: "Your Name",
-    });
-    return name || "Your Name";
   }
 }
