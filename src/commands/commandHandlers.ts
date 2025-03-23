@@ -14,17 +14,7 @@ export class CommandHandlers {
       vscode.commands.registerCommand(
         "dev-manager.refreshProjects",
         async () => {
-          // Restart the extension
-          const extension = vscode.extensions.getExtension("dev-manager");
-          if (extension) {
-            await vscode.commands.executeCommand(
-              "workbench.action.restartExtension",
-              extension.id,
-            );
-          } else {
-            // Fallback to just refreshing the tree if extension can't be found
-            this.projectTreeProvider.refresh();
-          }
+          this.projectTreeProvider.refresh();
         },
       ),
 

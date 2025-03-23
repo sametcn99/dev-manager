@@ -86,7 +86,12 @@
         {
           "command": "dev-manager.refreshProjects",
           "when": "view == devManagerProjects",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "dev-manager.restartExtension",
+          "when": "view == devManagerProjects",
+          "group": "navigation@2"
         },
         {
           "command": "dev-manager.installAllDependencies",
