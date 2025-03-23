@@ -127,6 +127,11 @@
           "group": "navigation@1"
         },
         {
+          "command": "dev-manager.analyzeDependenciesSizes",
+          "when": "view == devManagerProjects",
+          "group": "navigation@2"
+        },
+        {
           "command": "dev-manager.installAllDependencies",
           "when": "view == devManagerProjects",
           "group": "1_modification"
@@ -135,11 +140,6 @@
           "command": "dev-manager.updateAllDependencies",
           "when": "view == devManagerProjects",
           "group": "1_modification"
-        },
-        {
-          "command": "dev-manager.analyzeDependenciesSizes",
-          "when": "view == devManagerProjects",
-          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -157,6 +157,11 @@
           "command": "dev-manager.cleanNodeModules",
           "when": "view == devManagerProjects && viewItem == project",
           "group": "2_modification"
+        },
+        {
+          "command": "dev-manager.analyzeDependenciesSizes",
+          "when": "view == devManagerProjects && viewItem == project",
+          "group": "inline"
         },
         {
           "command": "dev-manager.addDependency",

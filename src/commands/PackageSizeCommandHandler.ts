@@ -95,6 +95,9 @@ export class PackageSizeCommandHandler {
       return;
     }
 
+    // Show immediate feedback
+    vscode.window.showInformationMessage("Analyzing dependencies sizes...");
+
     const progressOptions = {
       location: vscode.ProgressLocation.Notification,
       title: "Analyzing package sizes...",

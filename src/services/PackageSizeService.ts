@@ -13,9 +13,7 @@ export class PackageSizeService {
   }
 
   // Get total size of all dependencies
-  public async getTotalDependenciesSize(
-    projectPath: string,
-  ): Promise<{
+  public async getTotalDependenciesSize(projectPath: string): Promise<{
     totalSize: number;
     packages: { name: string; size: number; files: number }[];
   }> {
@@ -67,7 +65,9 @@ export class PackageSizeService {
         }
       }
     } catch (error) {
-      console.error("Error analyzing package sizes:", error);
+      vscode.window.showErrorMessage(
+        `Error analyzing package sizes in ${nodeModulesPath}: ${error}`,
+      );
       throw error;
     }
 
