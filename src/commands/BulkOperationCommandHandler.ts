@@ -55,19 +55,34 @@ export class BulkOperationCommandHandler {
       return;
     }
 
+    // Check which projects have updates according to their notification settings
+    const projectsWithUpdates = projects.filter((project) =>
+      [...project.dependencies, ...project.devDependencies].some(
+        (dep) => dep.hasUpdate,
+      ),
+    );
+
+    if (projectsWithUpdates.length === 0) {
+      vscode.window.showInformationMessage(
+        "No updates available according to current notification settings",
+      );
+      return;
+    }
+
     const terminal = vscode.window.createTerminal("Dev Manager - Bulk Update");
     terminal.show();
-    for (const project of projects) {
+
+    for (const project of projectsWithUpdates) {
       const updateCmd = this.packageManagerService.getCommand(
         project.packageManager,
         "update",
       );
       terminal.sendText(
-        `cd "${project.path}" && echo "Updating dependencies for ${project.name}..." && ${updateCmd}`,
+        `cd "${project.path}" && echo "Updating dependencies for ${project.name} (${project.updateSettings.notificationLevel} updates)..." && ${updateCmd}`,
       );
     }
     vscode.window.showInformationMessage(
-      `Updating dependencies for ${projects.length} projects...`,
+      `Updating dependencies for ${projectsWithUpdates.length} projects...`,
     );
   }
 }

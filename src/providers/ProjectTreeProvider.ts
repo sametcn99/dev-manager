@@ -8,6 +8,7 @@ import {
   DependencyGroupTreeItem,
   ScriptGroupTreeItem,
   ScriptTreeItem,
+  UpdateSettingsItem,
 } from "../views/TreeItems";
 import { ProjectInfo } from "../types/ProjectInfo";
 
@@ -60,9 +61,10 @@ export class ProjectTreeProvider
         return [];
       }
 
-      // Show package manager dropdown, scripts group, and dependency groups
+      // Show package manager dropdown, update settings, scripts group, and dependency groups
       return [
         new PackageManagerDropdownItem(project.packageManager, project.path),
+        new UpdateSettingsItem(project.path, project.updateSettings),
         new ScriptGroupTreeItem(project.path),
         new DependencyGroupTreeItem("Dependencies", project.path),
         new DependencyGroupTreeItem("Dev Dependencies", project.path),
@@ -217,6 +219,43 @@ export class ProjectTreeProvider
         }
       }
       this.refresh();
+    }
+  }
+
+  public async changeUpdateNotificationSettings(info: {
+    path: string;
+    notificationLevel: UpdateNotificationType;
+  }): Promise<void> {
+    const project = this.projects.find((p) => p.path === info.path);
+    if (project) {
+      project.updateSettings = {
+        notificationLevel: info.notificationLevel,
+      };
+
+      // Save settings to disk
+      await this.projectService.saveProjectUpdateSettings(
+        info.path,
+        project.updateSettings,
+      );
+
+      // Find and refresh the specific project to update its settings
+      const projectItem = this.projects
+        .map(
+          (p) =>
+            new ProjectTreeItem(
+              p.name,
+              p.path,
+              p.packageManager,
+              vscode.TreeItemCollapsibleState.Expanded,
+            ),
+        )
+        .find((p) => p.path === info.path);
+
+      if (projectItem) {
+        this.refresh(projectItem);
+      } else {
+        this.refresh();
+      }
     }
   }
 

@@ -67,19 +67,35 @@ export class DependencyCommandHandler {
       return;
     }
 
-    const terminal = vscode.window.createTerminal("Dev Manager");
-    terminal.show();
     const project = (await this.projectTreeProvider.getAllProjects()).find(
       (p) => p.path === item.path,
     );
 
-    if (project) {
-      const updateCmd = this.packageManagerService.getCommand(
-        project.packageManager,
-        "update",
-      );
-      terminal.sendText(`cd "${project.path}" && ${updateCmd}`);
+    if (!project) {
+      return;
     }
+
+    // Check if there are any updates available according to notification settings
+    const hasUpdates = [
+      ...project.dependencies,
+      ...project.devDependencies,
+    ].some((dep) => dep.hasUpdate);
+
+    if (!hasUpdates) {
+      vscode.window.showInformationMessage(
+        `No updates available according to current notification settings (${project.updateSettings.notificationLevel})`,
+      );
+      return;
+    }
+
+    const terminal = vscode.window.createTerminal("Dev Manager");
+    terminal.show();
+
+    const updateCmd = this.packageManagerService.getCommand(
+      project.packageManager,
+      "update",
+    );
+    terminal.sendText(`cd "${project.path}" && ${updateCmd}`);
   }
 
   private async handleCleanNodeModules(item: ProjectTreeItem) {
@@ -231,7 +247,9 @@ export class DependencyCommandHandler {
 
     quickPick.onDidAccept(async () => {
       const selected = quickPick.selectedItems[0];
-      if (!selected || selected.label.startsWith("$")) return;
+      if (!selected || selected.label.startsWith("$")) {
+        return;
+      }
 
       if (!selectedPackage) {
         selectedPackage = {
@@ -301,7 +319,9 @@ export class DependencyCommandHandler {
       "No",
     );
 
-    if (answer !== "Yes") return;
+    if (answer !== "Yes") {
+      return;
+    }
 
     try {
       await this.packageManagerService.removeDependency(

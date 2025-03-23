@@ -94,6 +94,11 @@
         "command": "dev-manager.runScript",
         "title": "Run Script",
         "icon": "$(play)"
+      },
+      {
+        "command": "dev-manager.changeUpdateNotificationSettings",
+        "title": "Change Update Notification Settings",
+        "icon": "$(bell)"
       }
     ],
     "menus": {
@@ -143,6 +148,11 @@
         {
           "command": "dev-manager.runScript",
           "when": "view == devManagerProjects && viewItem == script",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.changeUpdateNotificationSettings",
+          "when": "view == devManagerProjects && viewItem == updateSettings",
           "group": "inline"
         }
       ]

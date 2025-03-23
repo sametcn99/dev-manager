@@ -53,6 +53,26 @@ export class PackageManagerOptionItem extends vscode.TreeItem {
   }
 }
 
+export class UpdateSettingsItem extends vscode.TreeItem {
+  constructor(
+    public readonly projectPath: string,
+    public readonly settings: UpdateNotificationSettings,
+  ) {
+    super("Update Notifications", vscode.TreeItemCollapsibleState.None);
+    this.description = settings.notificationLevel;
+    this.tooltip = `Current setting: ${settings.notificationLevel}\nClick to change update notification level`;
+    this.iconPath = new vscode.ThemeIcon("bell");
+    this.contextValue = "updateSettings";
+    this.command = {
+      command: "dev-manager.changeUpdateNotificationSettings",
+      title: "Change Update Notification Settings",
+      arguments: [
+        { path: projectPath, currentSetting: settings.notificationLevel },
+      ],
+    };
+  }
+}
+
 export class DependencyGroupTreeItem extends vscode.TreeItem {
   constructor(
     label: string,
@@ -80,7 +100,25 @@ export class DependencyTreeItem extends vscode.TreeItem {
     if (depInfo.latestVersion) {
       this.tooltip.appendMarkdown(`Latest: \`${depInfo.latestVersion}\`\n\n`);
       if (depInfo.hasUpdate) {
-        this.tooltip.appendMarkdown(`⚠️ Update available`);
+        // Enhanced tooltip to show update type
+        let updateTypeLabel = "";
+        switch (depInfo.updateType) {
+          case "major":
+            updateTypeLabel = "⚠️ Major update available";
+            break;
+          case "minor":
+            updateTypeLabel = "ℹ️ Minor update available";
+            break;
+          case "patch":
+            updateTypeLabel = "🔧 Patch update available";
+            break;
+          case "prerelease":
+            updateTypeLabel = "🧪 Prerelease available";
+            break;
+          default:
+            updateTypeLabel = "Update available";
+        }
+        this.tooltip.appendMarkdown(updateTypeLabel);
       }
     }
 
@@ -93,7 +131,18 @@ export class DependencyTreeItem extends vscode.TreeItem {
     if (!depInfo.isInstalled) {
       this.iconPath = new vscode.ThemeIcon("warning");
     } else if (depInfo.hasUpdate) {
-      this.iconPath = new vscode.ThemeIcon("arrow-up");
+      // Use different icons based on update type
+      let iconName = "arrow-up";
+      if (depInfo.updateType === "major") {
+        iconName = "arrow-up"; // Keep red arrow for major updates
+      } else if (depInfo.updateType === "minor") {
+        iconName = "arrow-up"; // Standard arrow for minor updates
+      } else if (depInfo.updateType === "patch") {
+        iconName = "arrow-up"; // Lighter arrow for patch updates
+      } else if (depInfo.updateType === "prerelease") {
+        iconName = "beaker"; // Experiment icon for prereleases
+      }
+      this.iconPath = new vscode.ThemeIcon(iconName);
     } else {
       this.iconPath = new vscode.ThemeIcon("check");
     }

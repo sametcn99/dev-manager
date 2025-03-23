@@ -1,13 +1,92 @@
 import * as vscode from "vscode";
 import { ProjectInfo } from "../types/ProjectInfo";
 import { PackageManagerService } from "./PackageManagerService";
-import * as path from "path";
 
 export class ProjectService {
   private packageManagerService: PackageManagerService;
 
   constructor() {
     this.packageManagerService = new PackageManagerService();
+  }
+
+  // Default settings for update notifications - set to minor by default as requested
+  private defaultUpdateSettings: UpdateNotificationSettings = {
+    notificationLevel: "minor",
+  };
+
+  // Helper to load project-specific settings from a config file if it exists
+  private async loadProjectUpdateSettings(
+    projectUri: vscode.Uri,
+  ): Promise<UpdateNotificationSettings> {
+    try {
+      // Look for a .dev-manager.json configuration file in the project directory
+      const configFileUri = vscode.Uri.joinPath(
+        projectUri,
+        ".dev-manager.json",
+      );
+      const configContent = await vscode.workspace.fs.readFile(configFileUri);
+      const config = JSON.parse(configContent.toString());
+
+      // Validate and return the settings
+      if (config.updateSettings?.notificationLevel) {
+        const validLevels = [
+          "major",
+          "minor",
+          "patch",
+          "prerelease",
+          "all",
+          "none",
+        ];
+        if (validLevels.includes(config.updateSettings.notificationLevel)) {
+          return {
+            notificationLevel: config.updateSettings
+              .notificationLevel as UpdateNotificationType,
+          };
+        }
+      }
+      return this.defaultUpdateSettings;
+    } catch {
+      // If file doesn't exist or can't be parsed, return default settings
+      return this.defaultUpdateSettings;
+    }
+  }
+
+  // Helper to save project-specific settings to a config file
+  public async saveProjectUpdateSettings(
+    projectPath: string,
+    settings: UpdateNotificationSettings,
+  ): Promise<void> {
+    try {
+      const projectUri = vscode.Uri.file(projectPath);
+      const configFileUri = vscode.Uri.joinPath(
+        projectUri,
+        ".dev-manager.json",
+      );
+
+      // Try to read existing config
+      let config = {};
+      try {
+        const existingContent =
+          await vscode.workspace.fs.readFile(configFileUri);
+        config = JSON.parse(existingContent.toString());
+      } catch {
+        // File doesn't exist yet, use empty config
+      }
+
+      // Update config with new settings
+      config = {
+        ...config,
+        updateSettings: settings,
+      };
+
+      // Write back to file
+      await vscode.workspace.fs.writeFile(
+        configFileUri,
+        Buffer.from(JSON.stringify(config, null, 2)),
+      );
+    } catch (error) {
+      throw new Error(`Failed to save update settings: ${error}`);
+    }
   }
 
   public async scanWorkspace(): Promise<ProjectInfo[]> {
@@ -36,13 +115,14 @@ export class ProjectService {
 
     for (const packageJsonUri of allPackageJsons) {
       try {
-        const projectPath = vscode.Uri.joinPath(packageJsonUri, "..").fsPath;
+        const projectUri = vscode.Uri.joinPath(packageJsonUri, "..");
+        const projectPath = projectUri.fsPath;
 
         // Skip if this path or any parent path has already been processed
         if (
           processedPaths.has(projectPath) ||
           Array.from(processedPaths).some((p) =>
-            projectPath.startsWith(p + path.sep),
+            projectPath.startsWith(p + "/"),
           )
         ) {
           continue;
@@ -69,13 +149,18 @@ export class ProjectService {
     const packageJson = JSON.parse(packageJsonContent.toString());
     const projectUri = vscode.Uri.joinPath(packageJsonUri, "..");
 
+    // Load project-specific update settings or use defaults
+    const updateSettings = await this.loadProjectUpdateSettings(projectUri);
+
     const dependencies = await this.getDependencyInfo(
       packageJson.dependencies || {},
       projectUri,
+      updateSettings,
     );
     const devDependencies = await this.getDependencyInfo(
       packageJson.devDependencies || {},
       projectUri,
+      updateSettings,
     );
     const packageManager =
       await this.packageManagerService.detectPackageManager(projectUri);
@@ -88,12 +173,14 @@ export class ProjectService {
       devDependencies,
       packageManager,
       scripts: packageJson.scripts || {},
+      updateSettings,
     };
   }
 
   private async getDependencyInfo(
     deps: Record<string, string>,
     projectUri: vscode.Uri,
+    updateSettings: UpdateNotificationSettings,
   ): Promise<PackageInfo[]> {
     const nodeModulesPath = vscode.Uri.joinPath(projectUri, "node_modules");
     const nodeModulesExists = await vscode.workspace.fs
@@ -109,6 +196,7 @@ export class ProjectService {
           const details = await this.packageManagerService.getDependencyDetails(
             projectUri.fsPath,
             name,
+            updateSettings,
           );
           if (details) {
             return details;
@@ -123,6 +211,7 @@ export class ProjectService {
           isInstalled: false,
           currentVersion: undefined,
           hasUpdate: undefined,
+          updateType: undefined,
           latestVersion: undefined,
           availableVersions: [],
         };

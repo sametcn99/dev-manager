@@ -8,4 +8,5 @@ type ProjectInfo = {
   devDependencies: PackageInfo[];
   packageManager: PackageManager;
   scripts: Record<string, string>;
+  updateSettings: UpdateNotificationSettings;
 };

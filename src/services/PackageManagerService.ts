@@ -108,6 +108,63 @@ export class PackageManagerService {
     }
   }
 
+  // Determine update type (major, minor, patch, prerelease) based on semver
+  private determineUpdateType(
+    currentVersion: string,
+    latestVersion: string,
+  ): "major" | "minor" | "patch" | "prerelease" | undefined {
+    if (!semver.valid(currentVersion) || !semver.valid(latestVersion)) {
+      return undefined;
+    }
+
+    if (semver.major(latestVersion) > semver.major(currentVersion)) {
+      return "major";
+    } else if (semver.minor(latestVersion) > semver.minor(currentVersion)) {
+      return "minor";
+    } else if (semver.patch(latestVersion) > semver.patch(currentVersion)) {
+      return "patch";
+    } else if (
+      semver.prerelease(latestVersion) !== null &&
+      (semver.prerelease(currentVersion) === null ||
+        semver.gt(latestVersion, currentVersion))
+    ) {
+      return "prerelease";
+    }
+
+    return undefined;
+  }
+
+  // Check if an update should trigger a notification based on settings
+  private shouldShowUpdateNotification(
+    updateType: "major" | "minor" | "patch" | "prerelease" | undefined,
+    settings: UpdateNotificationSettings,
+  ): boolean {
+    if (!updateType) {
+      return false;
+    }
+
+    switch (settings.notificationLevel) {
+      case "all":
+        return true;
+      case "none":
+        return false;
+      case "major":
+        return updateType === "major";
+      case "minor":
+        return updateType === "major" || updateType === "minor";
+      case "patch":
+        return (
+          updateType === "major" ||
+          updateType === "minor" ||
+          updateType === "patch"
+        );
+      case "prerelease":
+        return true; // Show all including prereleases
+      default:
+        return true;
+    }
+  }
+
   public getCommand(
     packageManager: PackageManager,
     command: "install" | "update",
@@ -235,6 +292,7 @@ export class PackageManagerService {
   public async getDependencyDetails(
     projectPath: string,
     packageName: string,
+    updateSettings?: UpdateNotificationSettings,
   ): Promise<PackageInfo | undefined> {
     try {
       const packageJsonPath = vscode.Uri.joinPath(
@@ -275,16 +333,41 @@ export class PackageManagerService {
       const availableVersions = await this.getPackageVersions(packageName);
       const latestVersion = availableVersions[0];
 
+      // Determine update type and whether we should show update notification
+      let updateType: "major" | "minor" | "patch" | "prerelease" | undefined;
+      let hasUpdate = false;
+
+      if (installedVersion && latestVersion) {
+        // Check if there's any update available
+        const hasAnyUpdate = semver.lt(installedVersion, latestVersion);
+
+        if (hasAnyUpdate) {
+          updateType = this.determineUpdateType(
+            installedVersion,
+            latestVersion,
+          );
+
+          if (updateSettings) {
+            // Decide whether to show update notification based on settings
+            hasUpdate = this.shouldShowUpdateNotification(
+              updateType,
+              updateSettings,
+            );
+          } else {
+            // If no settings provided, default to showing any update
+            hasUpdate = true;
+          }
+        }
+      }
+
       return {
         name: packageName,
         version: installedVersion || versionRange.replace(/^[\^~]/, ""),
         versionRange,
         currentVersion: installedVersion,
         isInstalled: !!installedVersion,
-        hasUpdate:
-          installedVersion && latestVersion
-            ? semver.lt(installedVersion, latestVersion)
-            : undefined,
+        hasUpdate: hasUpdate,
+        updateType: updateType,
         latestVersion,
         availableVersions,
       };
