@@ -15,6 +15,22 @@ export function activate(context: vscode.ExtensionContext) {
     treeDataProvider: projectTreeProvider,
   });
 
+  // Create a file system watcher for package.json files
+  const watcher = vscode.workspace.createFileSystemWatcher(
+    "**/package.json",
+    false,
+    false,
+    false,
+  );
+
+  // Refresh projects when package.json changes
+  watcher.onDidChange(() => projectTreeProvider.refresh());
+  watcher.onDidCreate(() => projectTreeProvider.refresh());
+  watcher.onDidDelete(() => projectTreeProvider.refresh());
+
+  // Register the watcher to be disposed when extension is deactivated
+  context.subscriptions.push(watcher);
+
   commandHandlers.registerCommands(context);
 }
 
