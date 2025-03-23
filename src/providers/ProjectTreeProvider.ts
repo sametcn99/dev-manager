@@ -9,6 +9,7 @@ import {
   ScriptGroupTreeItem,
   ScriptTreeItem,
   UpdateSettingsItem,
+  LicenseTreeItem,
 } from "../views/TreeItems";
 import { ProjectInfo } from "../types/ProjectInfo";
 
@@ -87,10 +88,11 @@ export class ProjectTreeProvider
         return [];
       }
 
-      // Show package manager dropdown, update settings, scripts group, and dependency groups
+      // Show package manager dropdown, update settings, license, scripts group, and dependency groups
       return [
         new PackageManagerDropdownItem(project.packageManager, project.path),
         new UpdateSettingsItem(project.path, project.updateSettings),
+        new LicenseTreeItem(project.path, project.license),
         new ScriptGroupTreeItem(project.path),
         new DependencyGroupTreeItem("Dependencies", project.path),
         new DependencyGroupTreeItem("Dev Dependencies", project.path),

@@ -7,6 +7,7 @@ import { DependencyCommandHandler } from "./DependencyCommandHandler";
 import { BulkOperationCommandHandler } from "./BulkOperationCommandHandler";
 import { ScriptCommandHandler } from "./ScriptCommandHandler";
 import { UpdateNotificationCommandHandler } from "./UpdateNotificationCommandHandler";
+import { LicenseCommandHandler } from "./LicenseCommandHandler";
 
 export class CommandHandlers {
   private projectCommandHandler: ProjectCommandHandler;
@@ -15,6 +16,7 @@ export class CommandHandlers {
   private bulkOperationCommandHandler: BulkOperationCommandHandler;
   private scriptCommandHandler: ScriptCommandHandler;
   private updateNotificationCommandHandler: UpdateNotificationCommandHandler;
+  private licenseCommandHandler: LicenseCommandHandler;
 
   constructor(
     private projectTreeProvider: ProjectTreeProvider,
@@ -36,6 +38,7 @@ export class CommandHandlers {
     this.scriptCommandHandler = new ScriptCommandHandler(projectTreeProvider);
     this.updateNotificationCommandHandler =
       new UpdateNotificationCommandHandler(projectTreeProvider);
+    this.licenseCommandHandler = new LicenseCommandHandler(projectTreeProvider);
   }
 
   public registerCommands(context: vscode.ExtensionContext): void {
@@ -45,5 +48,6 @@ export class CommandHandlers {
     this.bulkOperationCommandHandler.registerCommands(context);
     this.scriptCommandHandler.registerCommands(context);
     this.updateNotificationCommandHandler.registerCommands(context);
+    this.licenseCommandHandler.registerCommands(context);
   }
 }

@@ -189,3 +189,21 @@ export class ScriptTreeItem extends vscode.TreeItem {
     };
   }
 }
+
+export class LicenseTreeItem extends vscode.TreeItem {
+  constructor(
+    public readonly projectPath: string,
+    public readonly license?: string,
+  ) {
+    super("License", vscode.TreeItemCollapsibleState.None);
+    this.description = license || "Not specified";
+    this.tooltip = `Project License: ${license || "Not specified"}`;
+    this.iconPath = new vscode.ThemeIcon("law");
+    this.contextValue = "license";
+    this.command = {
+      command: "dev-manager.changeLicense",
+      title: "Change License",
+      arguments: [{ path: projectPath, currentLicense: license }],
+    };
+  }
+}

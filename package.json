@@ -28,13 +28,6 @@
           "name": "Projects",
           "icon": "media/dependency.svg"
         }
-      ],
-      "explorer": [
-        {
-          "id": "devManagerProjects",
-          "name": "Dev Manager",
-          "icon": "media/dependency.svg"
-        }
       ]
     },
     "commands": [
@@ -104,6 +97,16 @@
         "command": "dev-manager.setProjectUpdateNotifications",
         "title": "Set Project Update Notifications",
         "icon": "$(bell)"
+      },
+      {
+        "command": "dev-manager.changeLicense",
+        "title": "Change Project License",
+        "icon": "$(law)"
+      },
+      {
+        "command": "dev-manager.fetchWebpage",
+        "title": "Fetch Webpage",
+        "icon": "$(globe)"
       }
     ],
     "menus": {
@@ -164,6 +167,11 @@
           "command": "dev-manager.setProjectUpdateNotifications",
           "when": "view == devManagerProjects && viewItem == project",
           "group": "2_modification"
+        },
+        {
+          "command": "dev-manager.changeLicense",
+          "when": "view == devManagerProjects && viewItem == license",
+          "group": "inline"
         }
       ]
     }
@@ -202,6 +210,7 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "@octokit/rest": "^21.1.1",
     "semver": "^7.7.1"
   },
   "lint-staged": {

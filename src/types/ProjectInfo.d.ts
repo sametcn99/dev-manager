@@ -9,4 +9,5 @@ type ProjectInfo = {
   packageManager: PackageManager;
   scripts: Record<string, string>;
   updateSettings: UpdateNotificationSettings;
+  license?: string; // The project's license
 };

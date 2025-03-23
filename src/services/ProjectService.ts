@@ -174,6 +174,7 @@ export class ProjectService {
       packageManager,
       scripts: packageJson.scripts || {},
       updateSettings,
+      license: packageJson.license || undefined,
     };
   }
 
