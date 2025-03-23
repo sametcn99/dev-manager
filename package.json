@@ -107,6 +107,16 @@
         "command": "dev-manager.fetchWebpage",
         "title": "Fetch Webpage",
         "icon": "$(globe)"
+      },
+      {
+        "command": "dev-manager.analyzePackageSize",
+        "title": "Analyze Package Size",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "dev-manager.analyzeDependenciesSizes",
+        "title": "Analyze All Dependencies Sizes",
+        "icon": "$(graph)"
       }
     ],
     "menus": {
@@ -125,6 +135,11 @@
           "command": "dev-manager.updateAllDependencies",
           "when": "view == devManagerProjects",
           "group": "1_modification"
+        },
+        {
+          "command": "dev-manager.analyzeDependenciesSizes",
+          "when": "view == devManagerProjects",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -171,6 +186,11 @@
         {
           "command": "dev-manager.changeLicense",
           "when": "view == devManagerProjects && viewItem == license",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.analyzePackageSize",
+          "when": "view == devManagerProjects && (viewItem == dependency || viewItem == devDependency)",
           "group": "inline"
         }
       ]

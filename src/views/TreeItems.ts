@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { PackageSizeService } from "../services/PackageSizeService";
 
 export class ProjectTreeItem extends vscode.TreeItem {
   constructor(
@@ -86,24 +87,67 @@ export class DependencyGroupTreeItem extends vscode.TreeItem {
 }
 
 export class DependencyTreeItem extends vscode.TreeItem {
+  private packageSizeService: PackageSizeService;
+
   constructor(
     public readonly depInfo: PackageInfo,
     public readonly projectPath: string,
     public readonly isDev: boolean = false,
   ) {
     super(depInfo.name);
+    this.packageSizeService = new PackageSizeService();
     this.tooltip = new vscode.MarkdownString();
-    this.tooltip.appendMarkdown(`**${depInfo.name}**\n\n`);
-    this.tooltip.appendMarkdown(
-      `Current: \`${depInfo.currentVersion || "Not installed"}\`\n\n`,
+    this.updateTooltip();
+    this.contextValue = isDev ? "devDependency" : "dependency";
+    this.updateDescription();
+    this.updateIcon();
+
+    // Load size information asynchronously
+    this.loadSizeInfo();
+  }
+
+  private async loadSizeInfo() {
+    try {
+      const sizeInfo = await this.packageSizeService.getPackageSize(
+        this.projectPath,
+        this.depInfo.name,
+      );
+      this.description = `${this.depInfo.currentVersion || this.depInfo.versionRange} (${this.packageSizeService.formatSize(sizeInfo.size)})`;
+      this.updateTooltip(sizeInfo);
+    } catch (error) {
+      // If size info can't be loaded, keep the original description
+      this.description = this.depInfo.currentVersion
+        ? `${this.depInfo.versionRange} (${this.depInfo.currentVersion})`
+        : this.depInfo.versionRange;
+    }
+  }
+
+  private updateDescription() {
+    this.description = this.depInfo.currentVersion
+      ? `${this.depInfo.versionRange} (${this.depInfo.currentVersion})`
+      : this.depInfo.versionRange;
+  }
+
+  private updateTooltip(sizeInfo?: { size: number; files: number }) {
+    const tooltip = new vscode.MarkdownString();
+    tooltip.appendMarkdown(`**${this.depInfo.name}**\n\n`);
+    tooltip.appendMarkdown(
+      `Current: \`${this.depInfo.currentVersion || "Not installed"}\`\n\n`,
     );
-    this.tooltip.appendMarkdown(`Range: \`${depInfo.versionRange}\`\n\n`);
-    if (depInfo.latestVersion) {
-      this.tooltip.appendMarkdown(`Latest: \`${depInfo.latestVersion}\`\n\n`);
-      if (depInfo.hasUpdate) {
-        // Enhanced tooltip to show update type
+    tooltip.appendMarkdown(`Range: \`${this.depInfo.versionRange}\`\n\n`);
+
+    if (sizeInfo) {
+      tooltip.appendMarkdown(
+        `Size: \`${this.packageSizeService.formatSize(sizeInfo.size)}\`\n\n`,
+      );
+      tooltip.appendMarkdown(`Files: \`${sizeInfo.files}\`\n\n`);
+    }
+
+    if (this.depInfo.latestVersion) {
+      tooltip.appendMarkdown(`Latest: \`${this.depInfo.latestVersion}\`\n\n`);
+      if (this.depInfo.hasUpdate) {
         let updateTypeLabel = "";
-        switch (depInfo.updateType) {
+        switch (this.depInfo.updateType) {
           case "major":
             updateTypeLabel = "⚠️ Major update available";
             break;
@@ -119,47 +163,43 @@ export class DependencyTreeItem extends vscode.TreeItem {
           default:
             updateTypeLabel = "Update available";
         }
-        this.tooltip.appendMarkdown(updateTypeLabel);
+        tooltip.appendMarkdown(updateTypeLabel);
       }
     }
 
-    this.description = depInfo.currentVersion
-      ? `${depInfo.versionRange} (${depInfo.currentVersion})`
-      : depInfo.versionRange;
+    this.tooltip = tooltip;
+  }
 
-    this.contextValue = isDev ? "devDependency" : "dependency";
-
-    if (!depInfo.isInstalled) {
+  private updateIcon() {
+    if (!this.depInfo.isInstalled) {
       this.iconPath = new vscode.ThemeIcon("warning");
-    } else if (depInfo.hasUpdate) {
-      // Use different icons based on update type
+    } else if (this.depInfo.hasUpdate) {
       let iconName = "arrow-up";
-      if (depInfo.updateType === "major") {
-        iconName = "arrow-up"; // Keep red arrow for major updates
-      } else if (depInfo.updateType === "minor") {
-        iconName = "arrow-up"; // Standard arrow for minor updates
-      } else if (depInfo.updateType === "patch") {
-        iconName = "arrow-up"; // Lighter arrow for patch updates
-      } else if (depInfo.updateType === "prerelease") {
-        iconName = "beaker"; // Experiment icon for prereleases
+      if (this.depInfo.updateType === "major") {
+        iconName = "arrow-up";
+      } else if (this.depInfo.updateType === "minor") {
+        iconName = "arrow-up";
+      } else if (this.depInfo.updateType === "patch") {
+        iconName = "arrow-up";
+      } else if (this.depInfo.updateType === "prerelease") {
+        iconName = "beaker";
       }
       this.iconPath = new vscode.ThemeIcon(iconName);
     } else {
       this.iconPath = new vscode.ThemeIcon("check");
     }
 
-    // Always add the command to allow version changes regardless of update status
     this.command = {
       command: "dev-manager.showDependencyVersionPicker",
       title: "Change Version",
       arguments: [
         {
-          packageName: depInfo.name,
+          packageName: this.depInfo.name,
           projectPath: this.projectPath,
           isDev: this.isDev,
-          currentVersion: depInfo.currentVersion,
-          versionRange: depInfo.versionRange,
-          availableVersions: depInfo.availableVersions,
+          currentVersion: this.depInfo.currentVersion,
+          versionRange: this.depInfo.versionRange,
+          availableVersions: this.depInfo.availableVersions,
         },
       ],
     };
