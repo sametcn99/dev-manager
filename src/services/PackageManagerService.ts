@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as semver from "semver";
+import { execSync } from "node:child_process";
 
 export class PackageManagerService {
   private static readonly LOCK_FILES: Record<string, PackageManager> = {
@@ -7,6 +8,15 @@ export class PackageManagerService {
     "yarn.lock": "yarn",
     "pnpm-lock.yaml": "pnpm",
     "bun.lockb": "bun",
+  };
+
+  private static readonly CONFIG_FILES: Record<string, PackageManager> = {
+    ".npmrc": "npm",
+    ".yarnrc": "yarn",
+    ".yarnrc.yml": "yarn",
+    ".pnpmfile.cjs": "pnpm",
+    "pnpm-workspace.yaml": "pnpm",
+    "bunfig.toml": "bun",
   };
 
   private static readonly COMMANDS: Record<
@@ -22,6 +32,7 @@ export class PackageManagerService {
   public async detectPackageManager(
     projectUri: vscode.Uri,
   ): Promise<PackageManager> {
+    // 1. First check lock files as they are most definitive
     for (const [lockFile, manager] of Object.entries(
       PackageManagerService.LOCK_FILES,
     )) {
@@ -33,7 +44,68 @@ export class PackageManagerService {
         continue;
       }
     }
-    return "npm";
+
+    // 2. Check package.json for packageManager field
+    try {
+      const packageJsonUri = vscode.Uri.joinPath(projectUri, "package.json");
+      const packageJsonContent =
+        await vscode.workspace.fs.readFile(packageJsonUri);
+      const packageJson = JSON.parse(packageJsonContent.toString());
+
+      if (packageJson.packageManager) {
+        const pmName = packageJson.packageManager.split("@")[0];
+        if (
+          pmName === "npm" ||
+          pmName === "yarn" ||
+          pmName === "pnpm" ||
+          pmName === "bun"
+        ) {
+          return pmName as PackageManager;
+        }
+      }
+    } catch {
+      // Ignore if package.json doesn't exist or can't be parsed
+    }
+
+    // 3. Check for package manager specific config files
+    for (const [configFile, manager] of Object.entries(
+      PackageManagerService.CONFIG_FILES,
+    )) {
+      try {
+        const configFileUri = vscode.Uri.joinPath(projectUri, configFile);
+        await vscode.workspace.fs.stat(configFileUri);
+        return manager;
+      } catch {
+        continue;
+      }
+    }
+
+    // 4. As a last resort, check if any package manager is available in PATH
+    try {
+      const { execSync } = require("child_process");
+      // Try pnpm first as it's least likely to be installed by default
+      execSync("pnpm --version", { stdio: "ignore" });
+      return "pnpm";
+    } catch {
+      try {
+        execSync("yarn --version", { stdio: "ignore" });
+        return "yarn";
+      } catch {
+        try {
+          execSync("bun --version", { stdio: "ignore" });
+          return "bun";
+        } catch {
+          // Default to npm only if it's actually available
+          try {
+            execSync("npm --version", { stdio: "ignore" });
+            return "npm";
+          } catch {
+            // If nothing is found, still default to npm as it's most common
+            return "npm";
+          }
+        }
+      }
+    }
   }
 
   public getCommand(
