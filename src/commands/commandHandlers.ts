@@ -1,6 +1,10 @@
 import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
-import { ProjectTreeItem } from "../views/TreeItems";
+import {
+  ProjectTreeItem,
+  DependencyTreeItem,
+  DependencyGroupTreeItem,
+} from "../views/TreeItems";
 import { PackageManagerService } from "../services/PackageManagerService";
 
 export class CommandHandlers {
@@ -311,6 +315,110 @@ export class CommandHandlers {
                 `Failed to update ${info.packageName}: ${error}`,
               );
             }
+          }
+        },
+      ),
+
+      vscode.commands.registerCommand(
+        "dev-manager.addDependency",
+        async (element: DependencyGroupTreeItem) => {
+          if (!element?.projectPath) {
+            return;
+          }
+
+          const isDev = element.label === "Dev Dependencies";
+
+          // Show input box for package name
+          const packageName = await vscode.window.showInputBox({
+            placeHolder: "Enter package name",
+            prompt: `Add ${isDev ? "development" : ""} dependency`,
+          });
+
+          if (!packageName) {
+            return;
+          }
+
+          // Get available versions
+          const versions =
+            await this.packageManagerService.getPackageVersions(packageName);
+          if (!versions.length) {
+            vscode.window.showErrorMessage(
+              `No versions found for package ${packageName}`,
+            );
+            return;
+          }
+
+          // Show quick pick for version selection
+          const versionItems = [
+            { label: "Latest", description: versions[0] },
+            {
+              label: "^" + versions[0],
+              description: "Compatible with most recent major version",
+            },
+            {
+              label: "~" + versions[0],
+              description: "Compatible with most recent minor version",
+            },
+            ...versions.map((v) => ({ label: v })),
+          ];
+
+          const selectedVersion = await vscode.window.showQuickPick(
+            versionItems,
+            {
+              placeHolder: "Select version",
+            },
+          );
+
+          if (!selectedVersion) {
+            return;
+          }
+
+          try {
+            await this.packageManagerService.addDependency(
+              element.projectPath,
+              packageName,
+              selectedVersion.label === "Latest" ? "" : selectedVersion.label,
+              isDev,
+            );
+            this.projectTreeProvider.refresh();
+          } catch (error) {
+            vscode.window.showErrorMessage(
+              `Failed to add dependency: ${error}`,
+            );
+          }
+        },
+      ),
+
+      vscode.commands.registerCommand(
+        "dev-manager.removeDependency",
+        async (element: DependencyTreeItem) => {
+          const projectPath = element.projectPath;
+          const packageName = element.label as string;
+          const isDev = element.contextValue === "devDependency";
+
+          // Confirm deletion
+          const answer = await vscode.window.showWarningMessage(
+            `Are you sure you want to remove ${packageName}?`,
+            { modal: true },
+            "Yes",
+            "No",
+          );
+
+          if (answer !== "Yes") {
+            return;
+          }
+
+          try {
+            await this.packageManagerService.removeDependency(
+              projectPath,
+              packageName,
+              isDev,
+            );
+            this.projectTreeProvider.refresh();
+          } catch (error) {
+            vscode.window.showErrorMessage(
+              `Failed to remove dependency: ${error}`,
+            );
           }
         },
       ),

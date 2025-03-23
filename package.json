@@ -79,6 +79,16 @@
       {
         "command": "dev-manager.showDependencyVersionPicker",
         "title": "Change Dependency Version"
+      },
+      {
+        "command": "dev-manager.addDependency",
+        "title": "Add Dependency",
+        "icon": "$(add)"
+      },
+      {
+        "command": "dev-manager.removeDependency",
+        "title": "Remove Dependency",
+        "icon": "$(trash)"
       }
     ],
     "menus": {
@@ -114,6 +124,16 @@
           "command": "dev-manager.cleanNodeModules",
           "when": "view == devManagerProjects && viewItem == project",
           "group": "2_modification"
+        },
+        {
+          "command": "dev-manager.addDependency",
+          "when": "view == devManagerProjects && viewItem == dependencyGroup",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.removeDependency",
+          "when": "view == devManagerProjects && (viewItem == dependency || viewItem == devDependency)",
+          "group": "inline"
         }
       ]
     }

@@ -66,9 +66,9 @@ export class DependencyGroupTreeItem extends vscode.TreeItem {
 
 export class DependencyTreeItem extends vscode.TreeItem {
   constructor(
-    private readonly depInfo: PackageInfo,
-    private readonly projectPath: string,
-    private readonly isDev: boolean = false,
+    public readonly depInfo: PackageInfo,
+    public readonly projectPath: string,
+    public readonly isDev: boolean = false,
   ) {
     super(depInfo.name);
     this.tooltip = new vscode.MarkdownString();

@@ -296,4 +296,51 @@ export class PackageManagerService {
       return undefined;
     }
   }
+
+  public async addDependency(
+    projectPath: string,
+    packageName: string,
+    version: string,
+    isDev: boolean,
+  ): Promise<void> {
+    const projectUri = vscode.Uri.file(projectPath);
+    const packageManager = await this.detectPackageManager(projectUri);
+    const terminal = vscode.window.createTerminal(
+      `Dev Manager - Add ${packageName}`,
+    );
+    terminal.show();
+
+    const addCommand = {
+      npm: isDev ? "npm install --save-dev" : "npm install --save",
+      yarn: isDev ? "yarn add -D" : "yarn add",
+      pnpm: isDev ? "pnpm add -D" : "pnpm add",
+      bun: isDev ? "bun add -d" : "bun add",
+    }[packageManager];
+
+    terminal.sendText(
+      `cd "${projectPath}" && ${addCommand} ${packageName}${version ? `@${version}` : ""}`,
+    );
+  }
+
+  public async removeDependency(
+    projectPath: string,
+    packageName: string,
+    isDev: boolean,
+  ): Promise<void> {
+    const projectUri = vscode.Uri.file(projectPath);
+    const packageManager = await this.detectPackageManager(projectUri);
+    const terminal = vscode.window.createTerminal(
+      `Dev Manager - Remove ${packageName}`,
+    );
+    terminal.show();
+
+    const removeCommand = {
+      npm: "npm uninstall",
+      yarn: "yarn remove",
+      pnpm: "pnpm remove",
+      bun: "bun remove",
+    }[packageManager];
+
+    terminal.sendText(`cd "${projectPath}" && ${removeCommand} ${packageName}`);
+  }
 }
