@@ -145,7 +145,7 @@ export class PackageSizeCommandHandler {
         const tabsHtml = allAnalysis
           .map(
             (result, index) =>
-              `<button class="tab-button ${index === 0 ? "active" : ""}" onclick="openTab(event, 'tab-${index}')">${result.projectName}</button>`,
+              `<button class="tab-button ${index === 0 ? "active" : ""}" onclick="openProjectTab(event, 'tab-${index}')">${result.projectName}</button>`,
           )
           .join("");
 
@@ -158,6 +158,7 @@ export class PackageSizeCommandHandler {
             this.packageSizeService.formatSize(result.totalSize),
             result.packages,
             sizeCategories,
+            index,
           ).then(
             (html) => `
             <div id="tab-${index}" class="tab-content ${index === 0 ? "active" : ""}">
@@ -187,6 +188,7 @@ export class PackageSizeCommandHandler {
                 display: flex;
                 gap: 5px;
                 margin-bottom: 15px;
+                flex-wrap: wrap;
               }
               .tab-button {
                 padding: 8px 15px;
@@ -214,7 +216,7 @@ export class PackageSizeCommandHandler {
             </div>
             ${contentHtml.join("")}
             <script>
-              function openTab(evt, tabName) {
+              function openProjectTab(evt, tabName) {
                 const tabContents = document.getElementsByClassName('tab-content');
                 for (let i = 0; i < tabContents.length; i++) {
                   tabContents[i].classList.remove('active');
@@ -226,6 +228,22 @@ export class PackageSizeCommandHandler {
                 }
 
                 document.getElementById(tabName).classList.add('active');
+                evt.currentTarget.classList.add('active');
+              }
+
+              function openSizeTab(evt, tabName, projectIndex) {
+                const projectContent = document.getElementById('tab-' + projectIndex);
+                const tabContents = projectContent.getElementsByClassName('size-tab-content');
+                for (let i = 0; i < tabContents.length; i++) {
+                  tabContents[i].classList.remove('active');
+                }
+
+                const tabButtons = projectContent.getElementsByClassName('size-tab-button');
+                for (let i = 0; i < tabButtons.length; i++) {
+                  tabButtons[i].classList.remove('active');
+                }
+
+                document.getElementById(tabName + '-' + projectIndex).classList.add('active');
                 evt.currentTarget.classList.add('active');
               }
             </script>
@@ -348,6 +366,7 @@ export class PackageSizeCommandHandler {
       medium: { name: string; size: number; files: number }[];
       small: { name: string; size: number; files: number }[];
     },
+    projectIndex?: number,
   ): Promise<string> {
     // Calculate percentages for visualization
     const totalBytes = packages.reduce((acc, pkg) => acc + pkg.size, 0);
@@ -411,8 +430,25 @@ export class PackageSizeCommandHandler {
       `;
     };
 
+    let html = template;
+
+    // If projectIndex is provided, update IDs and onclick handlers for multiple project view
+    if (typeof projectIndex === "number") {
+      html = html
+        .replace(
+          /id="(huge|large|medium|small|all)"/g,
+          (match, id) => `id="${id}-${projectIndex}"`,
+        )
+        .replace(
+          /onclick="openTab\(event,\s*'(huge|large|medium|small|all)'\)"/g,
+          (match, id) =>
+            `onclick="openSizeTab(event, '${id}', ${projectIndex})" class="size-tab-button"`,
+        )
+        .replace(/class="tab-content/g, 'class="size-tab-content');
+    }
+
     // Replace placeholders in the template
-    return template
+    return html
       .replace("{{projectName}}", projectName)
       .replace("{{totalSize}}", totalSize)
       .replace("{{totalPackages}}", packages.length.toString())
