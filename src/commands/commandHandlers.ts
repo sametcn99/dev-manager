@@ -326,66 +326,128 @@ export class CommandHandlers {
             return;
           }
 
+          const projectPath = element.projectPath; // Store path to ensure it's not undefined
           const isDev = element.label === "Dev Dependencies";
 
-          // Show input box for package name
-          const packageName = await vscode.window.showInputBox({
-            placeHolder: "Enter package name",
-            prompt: `Add ${isDev ? "development" : ""} dependency`,
+          // Create and show quickpick with loading indicator
+          const quickPick = vscode.window.createQuickPick();
+          quickPick.title = `Search for ${isDev ? "development " : ""}dependency`;
+          quickPick.placeholder = "Start typing to search for packages...";
+          quickPick.busy = false;
+          quickPick.items = [];
+
+          // Enable multi-step selection
+          let selectedPackage: { name: string; version: string } | undefined;
+
+          // Debounce the search to avoid too many requests
+          let searchTimeout: NodeJS.Timeout;
+
+          quickPick.onDidChangeValue(async (value) => {
+            if (value.length < 2) {
+              return;
+            } // Don't search for very short terms
+
+            quickPick.busy = true;
+            clearTimeout(searchTimeout);
+
+            searchTimeout = setTimeout(async () => {
+              try {
+                const results =
+                  await this.packageManagerService.searchPackages(value);
+                if (!results.length) {
+                  quickPick.items = [
+                    {
+                      label: "$(warning) No packages found",
+                      description: "Try a different search term",
+                    },
+                  ];
+                  return;
+                }
+
+                quickPick.items = results.map((pkg) => ({
+                  label: pkg.name,
+                  description: pkg.version,
+                  detail: pkg.description,
+                }));
+              } catch (error) {
+                quickPick.items = [
+                  {
+                    label: "$(error) Error searching packages",
+                    description: String(error),
+                  },
+                ];
+              } finally {
+                quickPick.busy = false;
+              }
+            }, 300); // 300ms debounce
           });
 
-          if (!packageName) {
-            return;
-          }
+          quickPick.onDidAccept(async () => {
+            const selected = quickPick.selectedItems[0];
+            if (!selected || selected.label.startsWith("$")) {
+              return;
+            }
 
-          // Get available versions
-          const versions =
-            await this.packageManagerService.getPackageVersions(packageName);
-          if (!versions.length) {
-            vscode.window.showErrorMessage(
-              `No versions found for package ${packageName}`,
-            );
-            return;
-          }
+            if (!selectedPackage) {
+              // First step: package selected, now show version selection
+              selectedPackage = {
+                name: selected.label,
+                version: selected.description || "",
+              };
 
-          // Show quick pick for version selection
-          const versionItems = [
-            { label: "Latest", description: versions[0] },
-            {
-              label: "^" + versions[0],
-              description: "Compatible with most recent major version",
-            },
-            {
-              label: "~" + versions[0],
-              description: "Compatible with most recent minor version",
-            },
-            ...versions.map((v) => ({ label: v })),
-          ];
+              quickPick.busy = true;
+              const versions =
+                await this.packageManagerService.getPackageVersions(
+                  selectedPackage.name,
+                );
+              quickPick.busy = false;
 
-          const selectedVersion = await vscode.window.showQuickPick(
-            versionItems,
-            {
-              placeHolder: "Select version",
-            },
-          );
+              if (!versions.length) {
+                vscode.window.showErrorMessage(
+                  `No versions found for package ${selectedPackage.name}`,
+                );
+                quickPick.hide();
+                return;
+              }
 
-          if (!selectedVersion) {
-            return;
-          }
+              // Update quickpick for version selection
+              quickPick.value = "";
+              quickPick.placeholder = "Select version...";
+              quickPick.items = [
+                { label: "Latest", description: versions[0] },
+                {
+                  label: "^" + versions[0],
+                  description: "Compatible with most recent major version",
+                },
+                {
+                  label: "~" + versions[0],
+                  description: "Compatible with most recent minor version",
+                },
+                ...versions.map((v) => ({ label: v })),
+              ];
+            } else {
+              // Second step: version selected, proceed with installation
+              const version = selected.label === "Latest" ? "" : selected.label;
+              quickPick.hide();
 
-          try {
-            await this.packageManagerService.addDependency(
-              element.projectPath,
-              packageName,
-              selectedVersion.label === "Latest" ? "" : selectedVersion.label,
-              isDev,
-            );
-            this.projectTreeProvider.refresh();
-          } catch (error) {
-            vscode.window.showErrorMessage(
-              `Failed to add dependency: ${error}`,
-            );
-          }
+              try {
+                await this.packageManagerService.addDependency(
+                  projectPath,
+                  selectedPackage.name,
+                  version,
+                  isDev,
+                );
+                this.projectTreeProvider.refresh();
+              } catch (error) {
+                vscode.window.showErrorMessage(
+                  `Failed to add dependency: ${error}`,
+                );
+              }
+            }
+          });
+
+          quickPick.onDidHide(() => quickPick.dispose());
+          quickPick.show();
         },
       ),
 

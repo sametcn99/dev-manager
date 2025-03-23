@@ -322,6 +322,38 @@ export class PackageManagerService {
     );
   }
 
+  public async searchPackages(
+    searchTerm: string,
+  ): Promise<Array<{ name: string; description: string; version: string }>> {
+    return new Promise((resolve) => {
+      const { exec } = require("child_process");
+      exec(
+        `npm search ${searchTerm} --json --no-description-length-limit`,
+        (error: any, stdout: string) => {
+          try {
+            if (error) {
+              console.error(`Error searching packages: ${error}`);
+              resolve([]);
+              return;
+            }
+
+            const results = JSON.parse(stdout);
+            return resolve(
+              results.map((pkg: any) => ({
+                name: pkg.name,
+                description: pkg.description,
+                version: pkg.version,
+              })),
+            );
+          } catch (err) {
+            console.error(`Unexpected error searching packages: ${err}`);
+            resolve([]);
+          }
+        },
+      );
+    });
+  }
+
   public async removeDependency(
     projectPath: string,
     packageName: string,
