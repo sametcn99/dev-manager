@@ -92,18 +92,115 @@ export class PackageSizeCommandHandler {
   }
 
   private async handleAnalyzeDependenciesSizes(info?: { path: string }) {
-    // If path isn't provided directly, get the first active project path from the tree provider
+    // If no specific project path is provided, analyze all projects
+    const projects = await this.projectTreeProvider.getAllProjects();
+
+    if (!info?.path && projects.length > 1) {
+      // Show immediate feedback
+      vscode.window.showInformationMessage(
+        "Analyzing all projects' dependencies sizes...",
+      );
+
+      const progressOptions = {
+        location: vscode.ProgressLocation.Notification,
+        title: "Analyzing all projects' package sizes...",
+        cancellable: false,
+      };
+
+      try {
+        const allAnalysis = await vscode.window.withProgress(
+          progressOptions,
+          async () => {
+            const results = [];
+            for (const project of projects) {
+              const analysis =
+                await this.packageSizeService.getTotalDependenciesSize(
+                  project.path,
+                );
+              results.push({
+                projectName: project.name,
+                totalSize: analysis.totalSize,
+                packages: analysis.packages,
+              });
+            }
+            return results;
+          },
+        );
+
+        // Consolidate results
+        const consolidatedPackages = allAnalysis.flatMap((result) =>
+          result.packages.map((pkg) => ({
+            ...pkg,
+            projectName: result.projectName,
+          })),
+        );
+
+        const totalSize = allAnalysis.reduce(
+          (sum, result) => sum + result.totalSize,
+          0,
+        );
+        const formattedTotalSize =
+          this.packageSizeService.formatSize(totalSize);
+
+        // Create and show webview with enhanced visualization
+        const panel = vscode.window.createWebviewPanel(
+          "dependencySizeAnalysis",
+          "All Projects Dependencies Size Analysis",
+          vscode.ViewColumn.One,
+          {
+            enableScripts: true,
+            localResourceRoots: [],
+          },
+        );
+
+        // Group packages by size categories
+        const sizeCategories =
+          this.categorizeDependenciesBySize(consolidatedPackages);
+
+        // Generate HTML with interactive elements and better visualization
+        panel.webview.html = this.generateDetailedDependencyReportHtml(
+          "All Projects",
+          formattedTotalSize,
+          consolidatedPackages,
+          sizeCategories,
+        );
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Failed to analyze dependencies sizes for all projects: ${error}`,
+        );
+      }
+      return;
+    }
+
+    // If a specific project path is provided, analyze only that project
     let projectPath = info?.path;
 
     if (!projectPath) {
-      const projects = await this.projectTreeProvider.getAllProjects();
       if (projects && projects.length > 0) {
-        projectPath = projects[0].path;
+        const selectedProject = await vscode.window.showQuickPick(
+          projects.map((project) => ({
+            label: project.name,
+            description: project.path,
+          })),
+          {
+            placeHolder: "Select a project to analyze dependencies",
+          },
+        );
+
+        if (!selectedProject) {
+          vscode.window.showErrorMessage("No project selected for analysis");
+          return;
+        }
+
+        projectPath = selectedProject.description;
       } else {
         vscode.window.showErrorMessage("No projects found to analyze");
         return;
       }
     }
+
+    // Show immediate feedback
+    vscode.window.showInformationMessage("Analyzing dependencies sizes...");
 
     const progressOptions = {
       location: vscode.ProgressLocation.Notification,
@@ -120,12 +217,12 @@ export class PackageSizeCommandHandler {
         analysis.totalSize,
       );
 
-      const projectName = path.basename(projectPath);
+      const projectName = vscode.workspace.asRelativePath(projectPath);
 
       // Create and show webview with enhanced visualization
       const panel = vscode.window.createWebviewPanel(
         "dependencySizeAnalysis",
-        "Dependencies Size Analysis",
+        `Dependencies Size Analysis: ${projectName}`,
         vscode.ViewColumn.One,
         {
           enableScripts: true,
