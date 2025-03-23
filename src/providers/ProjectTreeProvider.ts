@@ -41,18 +41,44 @@ export class ProjectTreeProvider
     return element;
   }
 
+  private findParentProject(
+    projectPath: string,
+  ): { name: string; path: string } | undefined {
+    // Sort projects by path length to ensure we check parent paths first
+    const sortedProjects = [...this.projects].sort(
+      (a, b) => a.path.length - b.path.length,
+    );
+
+    // Find the closest parent project
+    for (const project of sortedProjects) {
+      if (
+        projectPath.startsWith(project.path + "\\") ||
+        projectPath.startsWith(project.path + "/")
+      ) {
+        return {
+          name: project.name,
+          path: project.path,
+        };
+      }
+    }
+    return undefined;
+  }
+
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
     if (!element) {
       this.projects = await this.projectService.scanWorkspace();
-      return this.projects.map(
-        (project) =>
-          new ProjectTreeItem(
-            project.name,
-            project.path,
-            project.packageManager,
-            vscode.TreeItemCollapsibleState.Expanded,
-          ),
-      );
+
+      // Create tree items with parent information
+      return this.projects.map((project) => {
+        const parentProject = this.findParentProject(project.path);
+        return new ProjectTreeItem(
+          project.name,
+          project.path,
+          project.packageManager,
+          vscode.TreeItemCollapsibleState.Expanded,
+          parentProject,
+        );
+      });
     }
 
     if (element instanceof ProjectTreeItem) {
@@ -114,38 +140,18 @@ export class ProjectTreeProvider
     return [];
   }
 
-  private async findParentProject(
-    element: vscode.TreeItem,
-  ): Promise<ProjectTreeItem | undefined> {
-    // Save element's parent in an array to track its path
-    const path: vscode.TreeItem[] = [];
-    let current = element;
-
-    // Walk up the tree to find the parent project
-    while (current) {
-      const parent = await this.findParent(current, path);
-      if (!parent) {
-        break;
-      }
-      path.unshift(parent);
-      if (parent instanceof ProjectTreeItem) {
-        return parent;
-      }
-      current = parent;
-    }
-    return undefined;
-  }
-
   private async findParent(
     child: vscode.TreeItem,
     path: vscode.TreeItem[],
   ): Promise<vscode.TreeItem | undefined> {
     for (const project of this.projects) {
+      const parentProject = this.findParentProject(project.path);
       const projectItem = new ProjectTreeItem(
         project.name,
         project.path,
         project.packageManager,
         vscode.TreeItemCollapsibleState.Expanded,
+        parentProject,
       );
 
       // If we're looking for a project's direct child

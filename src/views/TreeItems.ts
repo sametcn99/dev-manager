@@ -6,10 +6,11 @@ export class ProjectTreeItem extends vscode.TreeItem {
     public readonly path: string,
     public readonly packageManager: PackageManager,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+    public readonly parentProject?: { name: string; path: string },
   ) {
     super(label, collapsibleState);
-    this.tooltip = `${path} (${packageManager})`;
-    this.description = packageManager;
+    this.tooltip = `${path} (${packageManager})${parentProject ? `\nNested in: ${parentProject.name}` : ""}`;
+    this.description = `${packageManager}${parentProject ? ` • nested in ${parentProject.name}` : ""}`;
     this.iconPath = new vscode.ThemeIcon("package");
     this.contextValue = "project";
   }
