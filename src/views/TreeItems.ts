@@ -114,3 +114,27 @@ export class DependencyTreeItem extends vscode.TreeItem {
     };
   }
 }
+
+export class ScriptGroupTreeItem extends vscode.TreeItem {
+  constructor(public readonly projectPath: string) {
+    super("Scripts", vscode.TreeItemCollapsibleState.Collapsed);
+    this.contextValue = "scriptGroup";
+    this.iconPath = new vscode.ThemeIcon("play");
+  }
+}
+
+export class ScriptTreeItem extends vscode.TreeItem {
+  constructor(
+    public readonly scriptName: string,
+    public readonly projectPath: string,
+  ) {
+    super(scriptName, vscode.TreeItemCollapsibleState.None);
+    this.contextValue = "script";
+    this.iconPath = new vscode.ThemeIcon("terminal");
+    this.command = {
+      command: "dev-manager.runScript",
+      title: "Run Script",
+      arguments: [{ path: projectPath, script: scriptName }],
+    };
+  }
+}

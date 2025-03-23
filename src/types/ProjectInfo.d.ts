@@ -7,4 +7,5 @@ type ProjectInfo = {
   dependencies: PackageInfo[];
   devDependencies: PackageInfo[];
   packageManager: PackageManager;
+  scripts: Record<string, string>;
 };

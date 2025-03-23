@@ -87,6 +87,7 @@ export class ProjectService {
       dependencies,
       devDependencies,
       packageManager,
+      scripts: packageJson.scripts || {},
     };
   }
 

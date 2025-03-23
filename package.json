@@ -89,6 +89,11 @@
         "command": "dev-manager.removeDependency",
         "title": "Remove Dependency",
         "icon": "$(trash)"
+      },
+      {
+        "command": "dev-manager.runScript",
+        "title": "Run Script",
+        "icon": "$(play)"
       }
     ],
     "menus": {
@@ -133,6 +138,11 @@
         {
           "command": "dev-manager.removeDependency",
           "when": "view == devManagerProjects && (viewItem == dependency || viewItem == devDependency)",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.runScript",
+          "when": "view == devManagerProjects && viewItem == script",
           "group": "inline"
         }
       ]

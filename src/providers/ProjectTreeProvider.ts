@@ -6,6 +6,8 @@ import {
   PackageManagerDropdownItem,
   PackageManagerOptionItem,
   DependencyGroupTreeItem,
+  ScriptGroupTreeItem,
+  ScriptTreeItem,
 } from "../views/TreeItems";
 import { ProjectInfo } from "../types/ProjectInfo";
 
@@ -58,12 +60,24 @@ export class ProjectTreeProvider
         return [];
       }
 
-      // Show package manager dropdown as first item with project-specific dependency groups
+      // Show package manager dropdown, scripts group, and dependency groups
       return [
         new PackageManagerDropdownItem(project.packageManager, project.path),
+        new ScriptGroupTreeItem(project.path),
         new DependencyGroupTreeItem("Dependencies", project.path),
         new DependencyGroupTreeItem("Dev Dependencies", project.path),
       ];
+    }
+
+    if (element instanceof ScriptGroupTreeItem) {
+      const project = this.projects.find((p) => p.path === element.projectPath);
+      if (!project) {
+        return [];
+      }
+
+      return Object.keys(project.scripts).map(
+        (scriptName) => new ScriptTreeItem(scriptName, project.path),
+      );
     }
 
     if (element instanceof PackageManagerDropdownItem) {
