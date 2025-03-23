@@ -72,8 +72,11 @@
       },
       {
         "command": "dev-manager.changePackageManager",
-        "title": "Change Package Manager",
-        "icon": "$(gear)"
+        "title": "Change Package Manager"
+      },
+      {
+        "command": "dev-manager.showPackageManagerPicker",
+        "title": "Select Package Manager"
       }
     ],
     "menus": {
@@ -109,11 +112,6 @@
           "command": "dev-manager.cleanNodeModules",
           "when": "view == devManagerProjects && viewItem == project",
           "group": "2_modification"
-        },
-        {
-          "command": "dev-manager.changePackageManager",
-          "when": "view == devManagerProjects && viewItem == project",
-          "group": "1_modification"
         }
       ]
     }

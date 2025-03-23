@@ -16,41 +16,78 @@ export class CommandHandlers {
       }),
 
       vscode.commands.registerCommand(
+        "dev-manager.showPackageManagerPicker",
+        async (info: { path: string; current: PackageManager; available: PackageManager[] }) => {
+          const items = info.available.map(pm => ({
+            label: pm,
+            description: pm === info.current ? "Current" : undefined,
+            picked: pm === info.current
+          }));
+
+          const selected = await vscode.window.showQuickPick(items, {
+            title: "Select Package Manager",
+            placeHolder: `Current: ${info.current}`,
+          });
+
+          if (selected && selected.label !== info.current) {
+            // Reuse existing changePackageManager command
+            await vscode.commands.executeCommand("dev-manager.changePackageManager", {
+              path: info.path,
+              packageManager: selected.label as PackageManager
+            });
+          }
+        }
+      ),
+
+      vscode.commands.registerCommand(
         "dev-manager.changePackageManager",
-        async (item: ProjectTreeItem) => {
-          if (!item) {
+        async (info: { path: string; packageManager: PackageManager }) => {
+          const projectUri = vscode.Uri.file(info.path);
+          const currentLockFile = await this.packageManagerService.getLockFile(projectUri);
+          
+          const message = currentLockFile 
+            ? `This will delete node_modules and ${currentLockFile}. Are you sure you want to switch to ${info.packageManager}?`
+            : `This will delete node_modules. Are you sure you want to switch to ${info.packageManager}?`;
+
+          const response = await vscode.window.showWarningMessage(
+            message,
+            { modal: true },
+            "Yes",
+            "No"
+          );
+
+          if (response !== "Yes") {
             return;
           }
 
-          const packageManagers: { label: string; value: PackageManager }[] = [
-            { label: "npm", value: "npm" },
-            { label: "yarn", value: "yarn" },
-            { label: "pnpm", value: "pnpm" },
-            { label: "bun", value: "bun" },
-          ];
+          // Show progress during the cleanup and reinstallation
+          await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `Switching to ${info.packageManager}...`,
+            cancellable: false
+          }, async (progress) => {
+            try {
+              progress.report({ message: "Cleaning up..." });
+              await this.packageManagerService.cleanupBeforePackageManagerChange(projectUri);
 
-          const selected = await vscode.window.showQuickPick(
-            packageManagers.map((pm) => ({
-              label: pm.label,
-              description:
-                item.packageManager === pm.value ? "(current)" : undefined,
-              value: pm.value,
-            })),
-            {
-              placeHolder: "Select package manager",
-              title: `Change package manager for ${item.label}`,
-            },
-          );
+              // Update the package manager in the tree
+              await this.projectTreeProvider.changePackageManager(info);
 
-          if (selected) {
-            await this.projectTreeProvider.changePackageManager(
-              item,
-              selected.value,
-            );
-            vscode.window.showInformationMessage(
-              `Changed package manager to ${selected.label} for ${item.label}`,
-            );
-          }
+              progress.report({ message: "Installing dependencies..." });
+              const terminal = vscode.window.createTerminal(`Dev Manager - ${info.packageManager} Install`);
+              terminal.show();
+              const installCmd = this.packageManagerService.getCommand(info.packageManager, "install");
+              terminal.sendText(`cd "${info.path}" && ${installCmd}`);
+
+              vscode.window.showInformationMessage(
+                `Successfully switched to ${info.packageManager}`,
+              );
+            } catch (error) {
+              vscode.window.showErrorMessage(
+                `Failed to switch package manager: ${error}`,
+              );
+            }
+          });
         },
       ),
 
