@@ -99,6 +99,11 @@
         "command": "dev-manager.changeUpdateNotificationSettings",
         "title": "Change Update Notification Settings",
         "icon": "$(bell)"
+      },
+      {
+        "command": "dev-manager.setProjectUpdateNotifications",
+        "title": "Set Project Update Notifications",
+        "icon": "$(bell)"
       }
     ],
     "menus": {
@@ -154,6 +159,11 @@
           "command": "dev-manager.changeUpdateNotificationSettings",
           "when": "view == devManagerProjects && viewItem == updateSettings",
           "group": "inline"
+        },
+        {
+          "command": "dev-manager.setProjectUpdateNotifications",
+          "when": "view == devManagerProjects && viewItem == project",
+          "group": "2_modification"
         }
       ]
     }
