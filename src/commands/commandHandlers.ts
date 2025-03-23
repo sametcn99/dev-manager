@@ -11,17 +11,34 @@ export class CommandHandlers {
 
   public registerCommands(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
-      vscode.commands.registerCommand("dev-manager.refreshProjects", () => {
-        this.projectTreeProvider.refresh();
-      }),
+      vscode.commands.registerCommand(
+        "dev-manager.refreshProjects",
+        async () => {
+          // Restart the extension
+          const extension = vscode.extensions.getExtension("dev-manager");
+          if (extension) {
+            await vscode.commands.executeCommand(
+              "workbench.action.restartExtension",
+              extension.id,
+            );
+          } else {
+            // Fallback to just refreshing the tree if extension can't be found
+            this.projectTreeProvider.refresh();
+          }
+        },
+      ),
 
       vscode.commands.registerCommand(
         "dev-manager.showPackageManagerPicker",
-        async (info: { path: string; current: PackageManager; available: PackageManager[] }) => {
-          const items = info.available.map(pm => ({
+        async (info: {
+          path: string;
+          current: PackageManager;
+          available: PackageManager[];
+        }) => {
+          const items = info.available.map((pm) => ({
             label: pm,
             description: pm === info.current ? "Current" : undefined,
-            picked: pm === info.current
+            picked: pm === info.current,
           }));
 
           const selected = await vscode.window.showQuickPick(items, {
@@ -31,21 +48,25 @@ export class CommandHandlers {
 
           if (selected && selected.label !== info.current) {
             // Reuse existing changePackageManager command
-            await vscode.commands.executeCommand("dev-manager.changePackageManager", {
-              path: info.path,
-              packageManager: selected.label as PackageManager
-            });
+            await vscode.commands.executeCommand(
+              "dev-manager.changePackageManager",
+              {
+                path: info.path,
+                packageManager: selected.label as PackageManager,
+              },
+            );
           }
-        }
+        },
       ),
 
       vscode.commands.registerCommand(
         "dev-manager.changePackageManager",
         async (info: { path: string; packageManager: PackageManager }) => {
           const projectUri = vscode.Uri.file(info.path);
-          const currentLockFile = await this.packageManagerService.getLockFile(projectUri);
-          
-          const message = currentLockFile 
+          const currentLockFile =
+            await this.packageManagerService.getLockFile(projectUri);
+
+          const message = currentLockFile
             ? `This will delete node_modules and ${currentLockFile}. Are you sure you want to switch to ${info.packageManager}?`
             : `This will delete node_modules. Are you sure you want to switch to ${info.packageManager}?`;
 
@@ -53,7 +74,7 @@ export class CommandHandlers {
             message,
             { modal: true },
             "Yes",
-            "No"
+            "No",
           );
 
           if (response !== "Yes") {
@@ -61,33 +82,43 @@ export class CommandHandlers {
           }
 
           // Show progress during the cleanup and reinstallation
-          await vscode.window.withProgress({
-            location: vscode.ProgressLocation.Notification,
-            title: `Switching to ${info.packageManager}...`,
-            cancellable: false
-          }, async (progress) => {
-            try {
-              progress.report({ message: "Cleaning up..." });
-              await this.packageManagerService.cleanupBeforePackageManagerChange(projectUri);
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Switching to ${info.packageManager}...`,
+              cancellable: false,
+            },
+            async (progress) => {
+              try {
+                progress.report({ message: "Cleaning up..." });
+                await this.packageManagerService.cleanupBeforePackageManagerChange(
+                  projectUri,
+                );
 
-              // Update the package manager in the tree
-              await this.projectTreeProvider.changePackageManager(info);
+                // Update the package manager in the tree
+                await this.projectTreeProvider.changePackageManager(info);
 
-              progress.report({ message: "Installing dependencies..." });
-              const terminal = vscode.window.createTerminal(`Dev Manager - ${info.packageManager} Install`);
-              terminal.show();
-              const installCmd = this.packageManagerService.getCommand(info.packageManager, "install");
-              terminal.sendText(`cd "${info.path}" && ${installCmd}`);
+                progress.report({ message: "Installing dependencies..." });
+                const terminal = vscode.window.createTerminal(
+                  `Dev Manager - ${info.packageManager} Install`,
+                );
+                terminal.show();
+                const installCmd = this.packageManagerService.getCommand(
+                  info.packageManager,
+                  "install",
+                );
+                terminal.sendText(`cd "${info.path}" && ${installCmd}`);
 
-              vscode.window.showInformationMessage(
-                `Successfully switched to ${info.packageManager}`,
-              );
-            } catch (error) {
-              vscode.window.showErrorMessage(
-                `Failed to switch package manager: ${error}`,
-              );
-            }
-          });
+                vscode.window.showInformationMessage(
+                  `Successfully switched to ${info.packageManager}`,
+                );
+              } catch (error) {
+                vscode.window.showErrorMessage(
+                  `Failed to switch package manager: ${error}`,
+                );
+              }
+            },
+          );
         },
       ),
 
@@ -219,6 +250,78 @@ export class CommandHandlers {
           vscode.window.showInformationMessage(
             `Updating dependencies for ${projects.length} projects...`,
           );
+        },
+      ),
+
+      vscode.commands.registerCommand(
+        "dev-manager.showDependencyVersionPicker",
+        async (info: {
+          packageName: string;
+          projectPath: string;
+          isDev: boolean;
+          currentVersion?: string;
+          versionRange: string;
+          availableVersions?: string[];
+        }) => {
+          const details = await this.packageManagerService.getDependencyDetails(
+            info.projectPath,
+            info.packageName,
+          );
+
+          if (!details?.availableVersions?.length) {
+            vscode.window.showErrorMessage(
+              `Failed to fetch versions for ${info.packageName}`,
+            );
+            return;
+          }
+
+          const items: vscode.QuickPickItem[] = details.availableVersions.map(
+            (version) => ({
+              label: version,
+              description:
+                version === details.currentVersion
+                  ? "Current"
+                  : version === details.latestVersion
+                    ? "Latest"
+                    : undefined,
+              detail:
+                version === details.currentVersion
+                  ? "Currently installed version"
+                  : version === details.latestVersion
+                    ? "Latest available version"
+                    : undefined,
+            }),
+          );
+
+          const selected = await vscode.window.showQuickPick(items, {
+            title: `Select Version for ${info.packageName}`,
+            placeHolder: `Current: ${info.currentVersion || "Not installed"}, Range: ${info.versionRange}`,
+          });
+
+          if (selected) {
+            try {
+              const prefix = info.versionRange.startsWith("^")
+                ? "^"
+                : info.versionRange.startsWith("~")
+                  ? "~"
+                  : "";
+              const newVersion = `${prefix}${selected.label}`;
+
+              // Use VS Code's built-in npm commands to install the specific version
+              await vscode.commands.executeCommand(
+                "npm.installSpecific",
+                info.packageName,
+                newVersion,
+                info.projectPath,
+                info.isDev,
+              );
+              this.projectTreeProvider.refresh();
+            } catch (error) {
+              vscode.window.showErrorMessage(
+                `Failed to update ${info.packageName}: ${error}`,
+              );
+            }
+          }
         },
       ),
     );
