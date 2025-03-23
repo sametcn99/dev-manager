@@ -140,21 +140,11 @@
     <div class="tab-container">
       <h2>Package Size Categories</h2>
       <div class="tab-buttons">
-        <button class="tab-button active" onclick="openTab(event, 'huge')">
-          Huge (≥10MB)
-        </button>
-        <button class="tab-button" onclick="openTab(event, 'large')">
-          Large (1MB-10MB)
-        </button>
-        <button class="tab-button" onclick="openTab(event, 'medium')">
-          Medium (100KB-1MB)
-        </button>
-        <button class="tab-button" onclick="openTab(event, 'small')">
-          Small (<100KB)
-        </button>
-        <button class="tab-button" onclick="openTab(event, 'all')">
-          All Packages
-        </button>
+        <button class="tab-button active" data-tab="huge">Huge (≥10MB)</button>
+        <button class="tab-button" data-tab="large">Large (1MB-10MB)</button>
+        <button class="tab-button" data-tab="medium">Medium (100KB-1MB)</button>
+        <button class="tab-button" data-tab="small">Small (<100KB)</button>
+        <button class="tab-button" data-tab="all">All Packages</button>
       </div>
 
       <div id="huge" class="tab-content active">
@@ -180,20 +170,28 @@
     </div>
 
     <script>
-      function openTab(evt, tabName) {
-        const tabContents = document.getElementsByClassName("tab-content");
-        for (let i = 0; i < tabContents.length; i++) {
-          tabContents[i].classList.remove("active");
-        }
+      document.addEventListener("DOMContentLoaded", function () {
+        const tabButtons = document.querySelectorAll(".tab-button");
 
-        const tabButtons = document.getElementsByClassName("tab-button");
-        for (let i = 0; i < tabButtons.length; i++) {
-          tabButtons[i].classList.remove("active");
-        }
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            // Remove active class from all buttons
+            tabButtons.forEach((btn) => btn.classList.remove("active"));
 
-        document.getElementById(tabName).classList.add("active");
-        evt.currentTarget.classList.add("active");
-      }
+            // Add active class to clicked button
+            this.classList.add("active");
+
+            // Hide all tab contents
+            document.querySelectorAll(".tab-content").forEach((content) => {
+              content.classList.remove("active");
+            });
+
+            // Show the selected tab content
+            const tabId = this.getAttribute("data-tab");
+            document.getElementById(tabId).classList.add("active");
+          });
+        });
+      });
     </script>
   </body>
 </html>
