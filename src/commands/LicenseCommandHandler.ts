@@ -47,15 +47,35 @@ export class LicenseCommandHandler {
       "MIT",
       "Apache-2.0",
       "GPL-3.0",
+      "GPL-2.0",
+      "LGPL-3.0",
+      "LGPL-2.1",
       "BSD-3-Clause",
+      "BSD-2-Clause",
       "ISC",
+      "MPL-2.0",
+      "AGPL-3.0",
+      "EPL-2.0",
+      "CC0-1.0",
       "Unlicense",
+      "WTFPL",
+      "BSL-1.0",
+      "Artistic-2.0",
+      "Zlib",
       "Custom...",
     ];
 
-    const items = licenses.map((license) => ({
+    // Sort licenses alphabetically except keep Custom... at the end
+    const sortedLicenses = licenses
+      .filter((l) => l !== "Custom...")
+      .sort()
+      .concat(["Custom..."]);
+
+    const items = sortedLicenses.map((license) => ({
       label: license,
       description: license === info.currentLicense ? "Current" : undefined,
+      // Add details about the license type
+      detail: this.getLicenseDescription(license),
     }));
 
     const selected = await vscode.window.showQuickPick(items, {
@@ -124,5 +144,32 @@ export class LicenseCommandHandler {
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to update license: ${error}`);
     }
+  }
+
+  private getLicenseDescription(license: string): string {
+    const descriptions: Record<string, string> = {
+      MIT: "Permissive, short and simple, allows commercial use, modification, and distribution",
+      "Apache-2.0":
+        "Permissive with patent rights grant, suitable for enterprise use",
+      "GPL-3.0": "Strong copyleft, requires derivative works to be open source",
+      "GPL-2.0": "Earlier version of GPL, widely used in Linux kernel",
+      "LGPL-3.0": "Weak copyleft, allows linking with proprietary software",
+      "LGPL-2.1": "Earlier version of LGPL, commonly used for libraries",
+      "BSD-3-Clause": "Permissive, requires attribution and non-endorsement",
+      "BSD-2-Clause": "Simplified BSD, more permissive than 3-clause",
+      ISC: "Simplified BSD/MIT, preferred by Node.js projects",
+      "MPL-2.0": "Mozilla license, file-level copyleft, patent rights",
+      "AGPL-3.0": "Strong copyleft, covers network use (e.g., web services)",
+      "EPL-2.0": "Eclipse license, weak copyleft with patent grants",
+      "CC0-1.0": "Public domain dedication, maximum freedom",
+      Unlicense: "Public domain waiver, no conditions",
+      WTFPL: "Do What The F* You Want To Public License, minimal restrictions",
+      "BSL-1.0": "Boost Software License, simple and permissive",
+      "Artistic-2.0": "Perl Foundation license, balances openness and control",
+      Zlib: "Simple permissive license used by zlib",
+      "Custom...": "Enter a custom license identifier",
+    };
+
+    return descriptions[license] || "No description available";
   }
 }
