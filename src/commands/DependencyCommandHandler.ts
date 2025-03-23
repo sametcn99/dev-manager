@@ -128,10 +128,21 @@ export class DependencyCommandHandler {
     versionRange: string;
     availableVersions?: string[];
   }) {
+    // Show loading message
+    const loadingMessage = vscode.window.setStatusBarMessage(
+      `Fetching versions for ${info.packageName}...`,
+    );
+    vscode.window.showInformationMessage(
+      `Fetching versions for ${info.packageName}...`,
+    );
+
     const details = await this.packageManagerService.getDependencyDetails(
       info.projectPath,
       info.packageName,
     );
+
+    // Clear loading message
+    loadingMessage.dispose();
 
     if (!details?.availableVersions?.length) {
       vscode.window.showErrorMessage(

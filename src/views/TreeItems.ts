@@ -148,6 +148,7 @@ export class DependencyTreeItem extends vscode.TreeItem {
       this.iconPath = new vscode.ThemeIcon("check");
     }
 
+    // Always add the command to allow version changes regardless of update status
     this.command = {
       command: "dev-manager.showDependencyVersionPicker",
       title: "Change Version",
