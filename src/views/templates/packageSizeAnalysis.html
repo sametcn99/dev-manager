@@ -139,31 +139,28 @@
 
     <div class="tab-container">
       <h2>Package Size Categories</h2>
-      <div class="tab-buttons">
-        <button class="tab-button active" data-tab="huge">Huge (≥10MB)</button>
-        <button class="tab-button" data-tab="large">Large (1MB-10MB)</button>
-        <button class="tab-button" data-tab="medium">Medium (100KB-1MB)</button>
-        <button class="tab-button" data-tab="small">Small (<100KB)</button>
-        <button class="tab-button" data-tab="all">All Packages</button>
-      </div>
 
-      <div id="huge" class="tab-content active">
+      <div
+        class="tab-content active"
+        data-tab="huge"
+        data-project="{{projectName}}"
+      >
         <h3>Huge Packages (≥10MB)</h3>
         {{hugePackagesTable}}
       </div>
-      <div id="large" class="tab-content">
+      <div class="tab-content" data-tab="large" data-project="{{projectName}}">
         <h3>Large Packages (1MB-10MB)</h3>
         {{largePackagesTable}}
       </div>
-      <div id="medium" class="tab-content">
+      <div class="tab-content" data-tab="medium" data-project="{{projectName}}">
         <h3>Medium Packages (100KB-1MB)</h3>
         {{mediumPackagesTable}}
       </div>
-      <div id="small" class="tab-content">
+      <div class="tab-content" data-tab="small" data-project="{{projectName}}">
         <h3>Small Packages (<100KB)</h3>
         {{smallPackagesTable}}
       </div>
-      <div id="all" class="tab-content">
+      <div class="tab-content" data-tab="all" data-project="{{projectName}}">
         <h3>All Packages</h3>
         {{allPackagesTable}}
       </div>
@@ -175,20 +172,32 @@
 
         tabButtons.forEach((button) => {
           button.addEventListener("click", function () {
-            // Remove active class from all buttons
-            tabButtons.forEach((btn) => btn.classList.remove("active"));
+            const projectId = this.getAttribute("data-project");
+            const tabType = this.getAttribute("data-tab");
+
+            // Find all buttons in this project's tab group and remove active class
+            document
+              .querySelectorAll(`.tab-button[data-project="${projectId}"]`)
+              .forEach((btn) => {
+                btn.classList.remove("active");
+              });
 
             // Add active class to clicked button
             this.classList.add("active");
 
-            // Hide all tab contents
-            document.querySelectorAll(".tab-content").forEach((content) => {
-              content.classList.remove("active");
-            });
+            // Hide all tab contents for this project
+            document
+              .querySelectorAll(`.tab-content[data-project="${projectId}"]`)
+              .forEach((content) => {
+                content.classList.remove("active");
+              });
 
-            // Show the selected tab content
-            const tabId = this.getAttribute("data-tab");
-            document.getElementById(tabId).classList.add("active");
+            // Show the selected tab content for this project
+            document
+              .querySelector(
+                `.tab-content[data-tab="${tabType}"][data-project="${projectId}"]`,
+              )
+              .classList.add("active");
           });
         });
       });
