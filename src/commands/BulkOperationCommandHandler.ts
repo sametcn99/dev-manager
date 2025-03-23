@@ -30,9 +30,11 @@ export class BulkOperationCommandHandler {
       return;
     }
 
-    const terminal = vscode.window.createTerminal("Dev Manager - Bulk Install");
-    terminal.show();
     for (const project of projects) {
+      const terminal = vscode.window.createTerminal(
+        `Install - ${project.name}`,
+      );
+      terminal.show();
       const installCmd = this.packageManagerService.getCommand(
         project.packageManager,
         "install",
@@ -42,7 +44,7 @@ export class BulkOperationCommandHandler {
       );
     }
     vscode.window.showInformationMessage(
-      `Installing dependencies for ${projects.length} projects...`,
+      `Installing dependencies for ${projects.length} projects in separate terminals...`,
     );
   }
 
@@ -69,10 +71,9 @@ export class BulkOperationCommandHandler {
       return;
     }
 
-    const terminal = vscode.window.createTerminal("Dev Manager - Bulk Update");
-    terminal.show();
-
     for (const project of projectsWithUpdates) {
+      const terminal = vscode.window.createTerminal(`Update - ${project.name}`);
+      terminal.show();
       const updateCmd = this.packageManagerService.getCommand(
         project.packageManager,
         "update",
@@ -82,7 +83,7 @@ export class BulkOperationCommandHandler {
       );
     }
     vscode.window.showInformationMessage(
-      `Updating dependencies for ${projectsWithUpdates.length} projects...`,
+      `Updating dependencies for ${projectsWithUpdates.length} projects in separate terminals...`,
     );
   }
 }
