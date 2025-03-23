@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dependencies Size Analysis</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+          "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+          sans-serif;
+        padding: 20px;
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+      }
+      h1,
+      h2,
+      h3 {
+        color: var(--vscode-editor-foreground);
+        border-bottom: 1px solid var(--vscode-panel-border);
+        padding-bottom: 10px;
+      }
+      .project-info {
+        background-color: var(--vscode-editor-inactiveSelectionBackground);
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      .summary {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .summary-item {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        padding: 15px;
+        border-radius: 4px;
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+      }
+      .package-bar {
+        margin-bottom: 10px;
+      }
+      .package-name {
+        margin-bottom: 3px;
+        font-weight: 500;
+      }
+      .progress-container {
+        background-color: var(--vscode-editorWidget-background);
+        height: 24px;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+      }
+      .progress-bar {
+        background-color: var(--vscode-progressBar-background);
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+      .size-label {
+        position: absolute;
+        right: 10px;
+        top: 3px;
+        font-size: 12px;
+        color: var(--vscode-editor-foreground);
+      }
+      .tab-container {
+        margin-top: 30px;
+      }
+      .tab-buttons {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 15px;
+      }
+      .tab-button {
+        padding: 8px 15px;
+        cursor: pointer;
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: none;
+        border-radius: 3px;
+      }
+      .tab-button.active {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 12px 15px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
+      th {
+        background-color: var(--vscode-editorWidget-background);
+        position: sticky;
+        top: 0;
+      }
+      .small-text {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="project-info">
+      <h1>Dependency Analysis: {{projectName}}</h1>
+      <div class="summary">
+        <div class="summary-item">
+          <h3>Total Size</h3>
+          <div style="font-size: 24px">{{totalSize}}</div>
+        </div>
+        <div class="summary-item">
+          <h3>Total Packages</h3>
+          <div style="font-size: 24px">{{totalPackages}}</div>
+        </div>
+        <div class="summary-item">
+          <h3>Largest Package</h3>
+          <div style="font-size: 24px">{{largestPackageName}}</div>
+          <div class="small-text">{{largestPackageSize}}</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Top Dependencies by Size</h2>
+    <div class="top-packages">{{topPackagesContent}}</div>
+
+    <div class="tab-container">
+      <h2>Package Size Categories</h2>
+      <div class="tab-buttons">
+        <button class="tab-button active" onclick="openTab(event, 'huge')">
+          Huge (≥10MB)
+        </button>
+        <button class="tab-button" onclick="openTab(event, 'large')">
+          Large (1MB-10MB)
+        </button>
+        <button class="tab-button" onclick="openTab(event, 'medium')">
+          Medium (100KB-1MB)
+        </button>
+        <button class="tab-button" onclick="openTab(event, 'small')">
+          Small (<100KB)
+        </button>
+        <button class="tab-button" onclick="openTab(event, 'all')">
+          All Packages
+        </button>
+      </div>
+
+      <div id="huge" class="tab-content active">
+        <h3>Huge Packages (≥10MB)</h3>
+        {{hugePackagesTable}}
+      </div>
+      <div id="large" class="tab-content">
+        <h3>Large Packages (1MB-10MB)</h3>
+        {{largePackagesTable}}
+      </div>
+      <div id="medium" class="tab-content">
+        <h3>Medium Packages (100KB-1MB)</h3>
+        {{mediumPackagesTable}}
+      </div>
+      <div id="small" class="tab-content">
+        <h3>Small Packages (<100KB)</h3>
+        {{smallPackagesTable}}
+      </div>
+      <div id="all" class="tab-content">
+        <h3>All Packages</h3>
+        {{allPackagesTable}}
+      </div>
+    </div>
+
+    <script>
+      function openTab(evt, tabName) {
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+          tabContents[i].classList.remove("active");
+        }
+
+        const tabButtons = document.getElementsByClassName("tab-button");
+        for (let i = 0; i < tabButtons.length; i++) {
+          tabButtons[i].classList.remove("active");
+        }
+
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+      }
+    </script>
+  </body>
+</html>

@@ -9,6 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
   const commandHandlers = new CommandHandlers(
     projectTreeProvider,
     packageManagerService,
+    context,
   );
 
   const treeView = vscode.window.createTreeView("devManagerProjects", {

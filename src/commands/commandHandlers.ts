@@ -23,6 +23,7 @@ export class CommandHandlers {
   constructor(
     private projectTreeProvider: ProjectTreeProvider,
     private packageManagerService: PackageManagerService,
+    private context: vscode.ExtensionContext,
   ) {
     this.projectCommandHandler = new ProjectCommandHandler(projectTreeProvider);
     this.packageManagerCommandHandler = new PackageManagerCommandHandler(
@@ -43,6 +44,7 @@ export class CommandHandlers {
     this.licenseCommandHandler = new LicenseCommandHandler(projectTreeProvider);
     this.packageSizeCommandHandler = new PackageSizeCommandHandler(
       projectTreeProvider,
+      context,
     );
   }
 

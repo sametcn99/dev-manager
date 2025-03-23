@@ -1,14 +1,25 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { PackageSizeService } from "../services/PackageSizeService";
 import { DependencyTreeItem } from "../views/TreeItems";
 
 export class PackageSizeCommandHandler {
   private packageSizeService: PackageSizeService;
+  private templateUri: vscode.Uri;
 
-  constructor(private projectTreeProvider: ProjectTreeProvider) {
+  constructor(
+    private projectTreeProvider: ProjectTreeProvider,
+    private context: vscode.ExtensionContext,
+  ) {
     this.packageSizeService = new PackageSizeService();
+    // Use the extension's root path to correctly resolve the template path
+    this.templateUri = vscode.Uri.joinPath(
+      this.context.extensionUri,
+      "src",
+      "views",
+      "templates",
+      "packageSizeAnalysis.html",
+    );
   }
 
   public registerCommands(context: vscode.ExtensionContext): void {
@@ -92,15 +103,9 @@ export class PackageSizeCommandHandler {
   }
 
   private async handleAnalyzeDependenciesSizes(info?: { path: string }) {
-    // If no specific project path is provided, analyze all projects
     const projects = await this.projectTreeProvider.getAllProjects();
 
     if (!info?.path && projects.length > 1) {
-      // Show immediate feedback
-      vscode.window.showInformationMessage(
-        "Analyzing all projects' dependencies sizes...",
-      );
-
       const progressOptions = {
         location: vscode.ProgressLocation.Notification,
         title: "Analyzing all projects' package sizes...",
@@ -127,25 +132,9 @@ export class PackageSizeCommandHandler {
           },
         );
 
-        // Consolidate results
-        const consolidatedPackages = allAnalysis.flatMap((result) =>
-          result.packages.map((pkg) => ({
-            ...pkg,
-            projectName: result.projectName,
-          })),
-        );
-
-        const totalSize = allAnalysis.reduce(
-          (sum, result) => sum + result.totalSize,
-          0,
-        );
-        const formattedTotalSize =
-          this.packageSizeService.formatSize(totalSize);
-
-        // Create and show webview with enhanced visualization
         const panel = vscode.window.createWebviewPanel(
           "dependencySizeAnalysis",
-          "All Projects Dependencies Size Analysis",
+          "Projects Dependencies Size Analysis",
           vscode.ViewColumn.One,
           {
             enableScripts: true,
@@ -153,17 +142,96 @@ export class PackageSizeCommandHandler {
           },
         );
 
-        // Group packages by size categories
-        const sizeCategories =
-          this.categorizeDependenciesBySize(consolidatedPackages);
+        const tabsHtml = allAnalysis
+          .map(
+            (result, index) =>
+              `<button class="tab-button ${index === 0 ? "active" : ""}" onclick="openTab(event, 'tab-${index}')">${result.projectName}</button>`,
+          )
+          .join("");
 
-        // Generate HTML with interactive elements and better visualization
-        panel.webview.html = this.generateDetailedDependencyReportHtml(
-          "All Projects",
-          formattedTotalSize,
-          consolidatedPackages,
-          sizeCategories,
-        );
+        const contentPromises = allAnalysis.map((result, index) => {
+          const sizeCategories = this.categorizeDependenciesBySize(
+            result.packages,
+          );
+          return this.generateDetailedDependencyReportHtml(
+            result.projectName,
+            this.packageSizeService.formatSize(result.totalSize),
+            result.packages,
+            sizeCategories,
+          ).then(
+            (html) => `
+            <div id="tab-${index}" class="tab-content ${index === 0 ? "active" : ""}">
+              ${html}
+            </div>
+          `,
+          );
+        });
+
+        const contentHtml = await Promise.all(contentPromises);
+
+        panel.webview.html = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Projects Dependencies Size Analysis</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+                padding: 20px;
+                color: var(--vscode-foreground);
+                background-color: var(--vscode-editor-background);
+              }
+              .tab-buttons {
+                display: flex;
+                gap: 5px;
+                margin-bottom: 15px;
+              }
+              .tab-button {
+                padding: 8px 15px;
+                cursor: pointer;
+                background-color: var(--vscode-button-secondaryBackground);
+                color: var(--vscode-button-secondaryForeground);
+                border: none;
+                border-radius: 3px;
+              }
+              .tab-button.active {
+                background-color: var(--vscode-button-background);
+                color: var(--vscode-button-foreground);
+              }
+              .tab-content {
+                display: none;
+              }
+              .tab-content.active {
+                display: block;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="tab-buttons">
+              ${tabsHtml}
+            </div>
+            ${contentHtml.join("")}
+            <script>
+              function openTab(evt, tabName) {
+                const tabContents = document.getElementsByClassName('tab-content');
+                for (let i = 0; i < tabContents.length; i++) {
+                  tabContents[i].classList.remove('active');
+                }
+
+                const tabButtons = document.getElementsByClassName('tab-button');
+                for (let i = 0; i < tabButtons.length; i++) {
+                  tabButtons[i].classList.remove('active');
+                }
+
+                document.getElementById(tabName).classList.add('active');
+                evt.currentTarget.classList.add('active');
+              }
+            </script>
+          </body>
+          </html>
+        `;
       } catch (error) {
         vscode.window.showErrorMessage(
           `Failed to analyze dependencies sizes for all projects: ${error}`,
@@ -236,7 +304,7 @@ export class PackageSizeCommandHandler {
       );
 
       // Generate HTML with interactive elements and better visualization
-      panel.webview.html = this.generateDetailedDependencyReportHtml(
+      panel.webview.html = await this.generateDetailedDependencyReportHtml(
         projectName,
         formattedTotalSize,
         analysis.packages,
@@ -270,7 +338,7 @@ export class PackageSizeCommandHandler {
   /**
    * Generates detailed HTML report with interactive elements for dependency analysis
    */
-  private generateDetailedDependencyReportHtml(
+  private async generateDetailedDependencyReportHtml(
     projectName: string,
     totalSize: string,
     packages: { name: string; size: number; files: number }[],
@@ -280,17 +348,17 @@ export class PackageSizeCommandHandler {
       medium: { name: string; size: number; files: number }[];
       small: { name: string; size: number; files: number }[];
     },
-  ): string {
+  ): Promise<string> {
     // Calculate percentages for visualization
     const totalBytes = packages.reduce((acc, pkg) => acc + pkg.size, 0);
 
-    // Generate top packages HTML (top 10)
+    // Generate top packages content
     const topPackages = packages.slice(0, 10);
-    let topPackagesHtml = "";
+    let topPackagesContent = "";
     topPackages.forEach((pkg) => {
       const percentage = ((pkg.size / totalBytes) * 100).toFixed(1);
       const formattedSize = this.packageSizeService.formatSize(pkg.size);
-      topPackagesHtml += `
+      topPackagesContent += `
         <div class="package-bar">
           <div class="package-name">${pkg.name}</div>
           <div class="progress-container">
@@ -301,207 +369,30 @@ export class PackageSizeCommandHandler {
       `;
     });
 
-    // Generate category tables
-    const categoryHtml = this.generateCategoryTablesHtml(sizeCategories);
+    // Read the template file using VS Code API
+    const templateBuffer = await vscode.workspace.fs.readFile(this.templateUri);
+    const template = new TextDecoder().decode(templateBuffer);
 
-    return `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Dependencies Size Analysis</title>
-        <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; 
-            padding: 20px;
-            color: var(--vscode-foreground);
-            background-color: var(--vscode-editor-background);
-          }
-          h1, h2, h3 { 
-            color: var(--vscode-editor-foreground);
-            border-bottom: 1px solid var(--vscode-panel-border);
-            padding-bottom: 10px;
-          }
-          .project-info {
-            background-color: var(--vscode-editor-inactiveSelectionBackground);
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-          }
-          .summary {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-          }
-          .summary-item {
-            background-color: var(--vscode-button-secondaryBackground);
-            color: var(--vscode-button-secondaryForeground);
-            padding: 15px;
-            border-radius: 4px;
-            flex: 1;
-            min-width: 200px;
-            text-align: center;
-          }
-          .package-bar {
-            margin-bottom: 10px;
-          }
-          .package-name {
-            margin-bottom: 3px;
-            font-weight: 500;
-          }
-          .progress-container {
-            background-color: var(--vscode-editorWidget-background);
-            height: 24px;
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-          }
-          .progress-bar {
-            background-color: var(--vscode-progressBar-background);
-            height: 100%;
-            transition: width 0.3s ease;
-          }
-          .size-label {
-            position: absolute;
-            right: 10px;
-            top: 3px;
-            font-size: 12px;
-            color: var(--vscode-editor-foreground);
-          }
-          .tab-container {
-            margin-top: 30px;
-          }
-          .tab-buttons {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-          }
-          .tab-button {
-            padding: 8px 15px;
-            cursor: pointer;
-            background-color: var(--vscode-button-secondaryBackground);
-            color: var(--vscode-button-secondaryForeground);
-            border: none;
-            border-radius: 3px;
-          }
-          .tab-button.active {
-            background-color: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-          }
-          .tab-content {
-            display: none;
-          }
-          .tab-content.active {
-            display: block;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          th, td {
-            text-align: left;
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--vscode-panel-border);
-          }
-          th {
-            background-color: var(--vscode-editorWidget-background);
-            position: sticky;
-            top: 0;
-          }
-          .small-text {
-            font-size: 12px;
-            color: var(--vscode-descriptionForeground);
-          }
-        </style>
-      </head>
-      <body>
-        <div class="project-info">
-          <h1>Dependency Analysis: ${projectName}</h1>
-          <div class="summary">
-            <div class="summary-item">
-              <h3>Total Size</h3>
-              <div style="font-size: 24px">${totalSize}</div>
-            </div>
-            <div class="summary-item">
-              <h3>Total Packages</h3>
-              <div style="font-size: 24px">${packages.length}</div>
-            </div>
-            <div class="summary-item">
-              <h3>Largest Package</h3>
-              <div style="font-size: 24px">${packages[0]?.name || "N/A"}</div>
-              <div class="small-text">${packages[0] ? this.packageSizeService.formatSize(packages[0].size) : ""}</div>
-            </div>
-          </div>
-        </div>
-        
-        <h2>Top Dependencies by Size</h2>
-        <div class="top-packages">
-          ${topPackagesHtml}
-        </div>
-        
-        <div class="tab-container">
-          <h2>Package Size Categories</h2>
-          <div class="tab-buttons">
-            <button class="tab-button active" onclick="openTab(event, 'huge')">Huge (≥10MB)</button>
-            <button class="tab-button" onclick="openTab(event, 'large')">Large (1MB-10MB)</button>
-            <button class="tab-button" onclick="openTab(event, 'medium')">Medium (100KB-1MB)</button>
-            <button class="tab-button" onclick="openTab(event, 'small')">Small (<100KB)</button>
-            <button class="tab-button" onclick="openTab(event, 'all')">All Packages</button>
-          </div>
-          
-          ${categoryHtml}
-        </div>
-        
-        <script>
-          function openTab(evt, tabName) {
-            // Hide all tab content
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-              tabContents[i].classList.remove('active');
-            }
-            
-            // Remove active class from all tab buttons
-            const tabButtons = document.getElementsByClassName('tab-button');
-            for (let i = 0; i < tabButtons.length; i++) {
-              tabButtons[i].classList.remove('active');
-            }
-            
-            // Show current tab and add active class to button
-            document.getElementById(tabName).classList.add('active');
-            evt.currentTarget.classList.add('active');
-          }
-        </script>
-      </body>
-      </html>
-    `;
-  }
-
-  /**
-   * Generates HTML for each size category table
-   */
-  private generateCategoryTablesHtml(categories: {
-    huge: { name: string; size: number; files: number }[];
-    large: { name: string; size: number; files: number }[];
-    medium: { name: string; size: number; files: number }[];
-    small: { name: string; size: number; files: number }[];
-  }): string {
     // Generate tables for each category
     const generateTable = (
       packages: { name: string; size: number; files: number }[],
     ) => {
-      let tableRows = "";
-      packages.forEach((pkg, index) => {
-        const formattedSize = this.packageSizeService.formatSize(pkg.size);
-        tableRows += `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${pkg.name}</td>
-            <td>${formattedSize}</td>
-            <td>${pkg.files}</td>
-          </tr>
-        `;
-      });
+      if (!packages.length) {
+        return '<table><tr><td colspan="4">No packages in this category</td></tr></table>';
+      }
+
+      const rows = packages
+        .map(
+          (pkg, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${pkg.name}</td>
+          <td>${this.packageSizeService.formatSize(pkg.size)}</td>
+          <td>${pkg.files}</td>
+        </tr>
+      `,
+        )
+        .join("");
 
       return `
         <table>
@@ -514,36 +405,27 @@ export class PackageSizeCommandHandler {
             </tr>
           </thead>
           <tbody>
-            ${tableRows || '<tr><td colspan="4">No packages in this category</td></tr>'}
+            ${rows}
           </tbody>
         </table>
       `;
     };
 
-    // Generate all packages table
-    const allPackages = [
-      ...categories.huge,
-      ...categories.large,
-      ...categories.medium,
-      ...categories.small,
-    ];
-
-    return `
-      <div id="huge" class="tab-content active">
-        ${generateTable(categories.huge)}
-      </div>
-      <div id="large" class="tab-content">
-        ${generateTable(categories.large)}
-      </div>
-      <div id="medium" class="tab-content">
-        ${generateTable(categories.medium)}
-      </div>
-      <div id="small" class="tab-content">
-        ${generateTable(categories.small)}
-      </div>
-      <div id="all" class="tab-content">
-        ${generateTable(allPackages)}
-      </div>
-    `;
+    // Replace placeholders in the template
+    return template
+      .replace("{{projectName}}", projectName)
+      .replace("{{totalSize}}", totalSize)
+      .replace("{{totalPackages}}", packages.length.toString())
+      .replace("{{largestPackageName}}", packages[0]?.name || "N/A")
+      .replace(
+        "{{largestPackageSize}}",
+        packages[0] ? this.packageSizeService.formatSize(packages[0].size) : "",
+      )
+      .replace("{{topPackagesContent}}", topPackagesContent)
+      .replace("{{hugePackagesTable}}", generateTable(sizeCategories.huge))
+      .replace("{{largePackagesTable}}", generateTable(sizeCategories.large))
+      .replace("{{mediumPackagesTable}}", generateTable(sizeCategories.medium))
+      .replace("{{smallPackagesTable}}", generateTable(sizeCategories.small))
+      .replace("{{allPackagesTable}}", generateTable(packages));
   }
 }
