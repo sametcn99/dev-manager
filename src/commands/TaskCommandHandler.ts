@@ -120,29 +120,78 @@ export class TaskCommandHandler {
           cancellable: false,
         },
         async () => {
-          // Remove leading slash if present
-          const normalizedTaskId = info.taskId.startsWith("/")
-            ? info.taskId.substring(1)
-            : info.taskId;
-
+          // Get all tasks first - we'll need them regardless of lookup method
           const tasks = await this.taskService.getTasks();
-          const taskToRun = tasks.find(
-            (task) => task.name === normalizedTaskId,
-          );
+          if (tasks.length === 0) {
+            vscode.window.showErrorMessage("No tasks available in workspace");
+            return;
+          }
 
+          // Normalize task ID by removing leading slash and handling numeric IDs
+          let normalizedTaskId = info.taskId;
+          if (normalizedTaskId.startsWith("/")) {
+            normalizedTaskId = normalizedTaskId.substring(1);
+          }
+
+          let taskToRun: vscode.Task | undefined;
+
+          // Try to find task by numeric index first
+          if (/^\d+$/.test(normalizedTaskId)) {
+            const taskIndex = parseInt(normalizedTaskId, 10);
+
+            if (taskIndex > 0 && taskIndex <= tasks.length) {
+              // Tasks are 1-indexed in the UI
+              taskToRun = tasks[taskIndex - 1];
+            } else {
+              vscode.window.showErrorMessage(
+                `Task index ${taskIndex} is out of range. There are ${tasks.length} tasks available.`,
+              );
+              return;
+            }
+          } else {
+            // Try to find task by label first (which is what's shown in the UI)
+            taskToRun = tasks.find((task) => {
+              // Check if the task has a definition with a label property
+              return (
+                task.definition &&
+                "label" in task.definition &&
+                task.definition.label === normalizedTaskId
+              );
+            });
+
+            // If not found by label, fall back to name
+            if (!taskToRun) {
+              taskToRun = tasks.find((task) => task.name === normalizedTaskId);
+            }
+          }
+
+          // Execute the task if found
           if (taskToRun) {
             await vscode.tasks.executeTask(taskToRun);
           } else {
+            // Provide a more helpful error message with available tasks
+            const availableTasks = tasks
+              .map((t, index) => {
+                const label =
+                  t.definition && "label" in t.definition
+                    ? t.definition.label
+                    : t.name;
+                return `${index + 1}: ${label} (${t.name})`;
+              })
+              .join("\n");
+
             vscode.window.showErrorMessage(
-              `Task "${normalizedTaskId}" not found. Available tasks: ${tasks
-                .map((t) => t.name)
-                .join(", ")}`,
+              `Task "${normalizedTaskId}" not found. Available tasks:\n${availableTasks}`,
+              { modal: true },
             );
           }
         },
       );
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to run task: ${error}`);
+      console.error("Task execution error:", error);
+      vscode.window.showErrorMessage(
+        `Failed to run task: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 }
