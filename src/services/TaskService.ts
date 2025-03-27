@@ -37,30 +37,59 @@ export interface CustomTaskDefinition extends vscode.TaskDefinition {
 export class TaskService {
   async getTasks(): Promise<vscode.Task[]> {
     try {
-      // Get all workspace tasks
+      // First get all workspace tasks from VS Code's task provider
       const workspaceTasks = await vscode.tasks.fetchTasks();
 
-      // Also get any custom tasks from tasks.json
+      // Then get custom tasks from each workspace folder's tasks.json
       const workspaceFolders = vscode.workspace.workspaceFolders || [];
       const customTasks: vscode.Task[] = [];
 
       for (const folder of workspaceFolders) {
         const config = vscode.workspace.getConfiguration("tasks", folder.uri);
-        const tasks = config.get("tasks", []) as CustomTaskDefinition[];
+        const taskDefinitions = config.get(
+          "tasks",
+          [],
+        ) as CustomTaskDefinition[];
 
-        for (const taskDef of tasks) {
-          const task = await this.createTask(taskDef, folder);
-          customTasks.push(task);
+        for (const taskDef of taskDefinitions) {
+          try {
+            const task = new vscode.Task(
+              taskDef,
+              folder,
+              taskDef.label || "unnamed",
+              taskDef.type,
+            );
+
+            if (taskDef.command) {
+              const shellOptions: vscode.ShellExecutionOptions = {};
+              if (taskDef.options?.cwd) {
+                shellOptions.cwd = taskDef.options.cwd;
+              }
+              if (taskDef.options?.env) {
+                shellOptions.env = taskDef.options.env;
+              }
+              if (taskDef.options?.shell) {
+                shellOptions.executable = taskDef.options.shell.executable;
+                shellOptions.shellArgs = taskDef.options.shell.args;
+              }
+              task.execution = new vscode.ShellExecution(
+                taskDef.command,
+                shellOptions,
+              );
+            }
+
+            customTasks.push(task);
+          } catch (err) {
+            console.error(`Failed to create task from definition: ${err}`);
+          }
         }
       }
 
-      // Combine and deduplicate tasks
+      // Combine all tasks and remove duplicates
       const allTasks = [...workspaceTasks, ...customTasks];
-      const uniqueTasks = Array.from(
+      return Array.from(
         new Map(allTasks.map((task) => [task.name, task])).values(),
       );
-
-      return uniqueTasks;
     } catch (error) {
       console.error("Error fetching tasks:", error);
       return [];
@@ -71,6 +100,17 @@ export class TaskService {
     taskConfig: CustomTaskDefinition,
     scope: vscode.WorkspaceFolder | vscode.TaskScope,
   ): Promise<vscode.Task> {
+    if (typeof scope === "number") {
+      throw new Error("Task scope must be a workspace folder");
+    }
+
+    // First check if task with same label already exists
+    const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
+    const existingTasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    if (existingTasks.some((task) => task.label === taskConfig.label)) {
+      throw new Error(`Task with label "${taskConfig.label}" already exists`);
+    }
+
     const newTask = new vscode.Task(
       taskConfig,
       scope,
@@ -141,11 +181,13 @@ export class TaskService {
       };
     }
 
-    // Add the task to workspace configuration
-    const wsConfig = vscode.workspace.getConfiguration("tasks");
-    const tasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
-    tasks.push(taskConfig);
-    await wsConfig.update("tasks", tasks, vscode.ConfigurationTarget.Workspace);
+    // Add the task to workspace folder configuration
+    existingTasks.push(taskConfig);
+    await wsConfig.update(
+      "tasks",
+      existingTasks,
+      vscode.ConfigurationTarget.WorkspaceFolder,
+    );
 
     return newTask;
   }
@@ -190,7 +232,7 @@ export class TaskService {
     await wsConfig.update(
       "tasks",
       updatedTasks,
-      vscode.ConfigurationTarget.Workspace,
+      vscode.ConfigurationTarget.WorkspaceFolder,
     );
   }
 
@@ -211,7 +253,7 @@ export class TaskService {
       await wsConfig.update(
         "tasks",
         tasks,
-        vscode.ConfigurationTarget.Workspace,
+        vscode.ConfigurationTarget.WorkspaceFolder,
       );
     }
   }

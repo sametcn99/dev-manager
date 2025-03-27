@@ -272,7 +272,14 @@ export class TaskTreeItem extends vscode.TreeItem {
     this.command = {
       command: "dev-manager.runTask",
       title: "Run Task",
-      arguments: [{ taskId: task.name }],
+      // Remove the slash prefix from the task name
+      arguments: [
+        {
+          taskId: task.name.startsWith("/")
+            ? task.name.substring(1)
+            : task.name,
+        },
+      ],
     };
   }
 }

@@ -108,23 +108,39 @@ export class TaskCommandHandler {
 
   private async handleRunTask(info: { taskId: string }) {
     if (!info?.taskId) {
+      vscode.window.showErrorMessage("No task ID provided");
       return;
     }
 
     try {
-      // Remove leading slash if present
-      const normalizedTaskId = info.taskId.startsWith("/")
-        ? info.taskId.substring(1)
-        : info.taskId;
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Loading task...",
+          cancellable: false,
+        },
+        async () => {
+          // Remove leading slash if present
+          const normalizedTaskId = info.taskId.startsWith("/")
+            ? info.taskId.substring(1)
+            : info.taskId;
 
-      const tasks = await this.taskService.getTasks();
-      const taskToRun = tasks.find((task) => task.name === normalizedTaskId);
+          const tasks = await this.taskService.getTasks();
+          const taskToRun = tasks.find(
+            (task) => task.name === normalizedTaskId,
+          );
 
-      if (taskToRun) {
-        await vscode.tasks.executeTask(taskToRun);
-      } else {
-        vscode.window.showErrorMessage(`Task "${normalizedTaskId}" not found`);
-      }
+          if (taskToRun) {
+            await vscode.tasks.executeTask(taskToRun);
+          } else {
+            vscode.window.showErrorMessage(
+              `Task "${normalizedTaskId}" not found. Available tasks: ${tasks
+                .map((t) => t.name)
+                .join(", ")}`,
+            );
+          }
+        },
+      );
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to run task: ${error}`);
     }
