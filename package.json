@@ -117,6 +117,36 @@
         "command": "dev-manager.analyzeDependenciesSizes",
         "title": "Analyze All Dependencies Sizes",
         "icon": "$(graph)"
+      },
+      {
+        "command": "dev-manager.runScriptAcrossProjects",
+        "title": "Run Script Across Projects",
+        "icon": "$(play-circle)"
+      },
+      {
+        "command": "dev-manager.bulkManageDependencies",
+        "title": "Bulk Manage Dependencies",
+        "icon": "$(extensions)"
+      },
+      {
+        "command": "dev-manager.createTask",
+        "title": "Create Task",
+        "icon": "$(add)"
+      },
+      {
+        "command": "dev-manager.editTask",
+        "title": "Edit Task",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "dev-manager.deleteTask",
+        "title": "Delete Task",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "dev-manager.runTask",
+        "title": "Run Task",
+        "icon": "$(play)"
       }
     ],
     "menus": {
@@ -132,14 +162,24 @@
           "group": "navigation@2"
         },
         {
+          "command": "dev-manager.runScriptAcrossProjects",
+          "when": "view == devManagerProjects",
+          "group": "1_automation@1"
+        },
+        {
+          "command": "dev-manager.bulkManageDependencies",
+          "when": "view == devManagerProjects",
+          "group": "1_automation@2"
+        },
+        {
           "command": "dev-manager.installAllDependencies",
           "when": "view == devManagerProjects",
-          "group": "1_modification"
+          "group": "2_modification"
         },
         {
           "command": "dev-manager.updateAllDependencies",
           "when": "view == devManagerProjects",
-          "group": "1_modification"
+          "group": "2_modification"
         }
       ],
       "view/item/context": [
@@ -197,6 +237,26 @@
           "command": "dev-manager.analyzePackageSize",
           "when": "view == devManagerProjects && (viewItem == dependency || viewItem == devDependency)",
           "group": "inline"
+        },
+        {
+          "command": "dev-manager.createTask",
+          "when": "view == devManagerProjects && viewItem == tasksGroup",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.editTask",
+          "when": "view == devManagerProjects && viewItem == task",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.deleteTask",
+          "when": "view == devManagerProjects && viewItem == task",
+          "group": "inline"
+        },
+        {
+          "command": "dev-manager.runTask",
+          "when": "view == devManagerProjects && viewItem == task",
+          "group": "inline"
         }
       ]
     }
@@ -236,7 +296,8 @@
   },
   "dependencies": {
     "@octokit/rest": "^21.1.1",
-    "semver": "^7.7.1"
+    "semver": "^7.7.1",
+    "uuid": "^11.1.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"

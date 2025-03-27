@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { ProjectService } from "../services/ProjectService";
+import { TaskService } from "../services/TaskService";
 import {
   ProjectTreeItem,
   DependencyTreeItem,
@@ -10,6 +11,8 @@ import {
   ScriptTreeItem,
   UpdateSettingsItem,
   LicenseTreeItem,
+  TasksGroupTreeItem,
+  TaskTreeItem,
 } from "../views/TreeItems";
 import { ProjectInfo } from "../types/ProjectInfo";
 
@@ -22,6 +25,7 @@ export class ProjectTreeProvider
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   private projects: ProjectInfo[] = [];
   private projectService: ProjectService;
+  private taskService: TaskService;
 
   private readonly availablePackageManagers: PackageManager[] = [
     "npm",
@@ -32,6 +36,7 @@ export class ProjectTreeProvider
 
   constructor() {
     this.projectService = new ProjectService();
+    this.taskService = new TaskService();
   }
 
   refresh(element?: vscode.TreeItem): void {
@@ -67,19 +72,29 @@ export class ProjectTreeProvider
 
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
     if (!element) {
+      // Root level shows tasks and projects
       this.projects = await this.projectService.scanWorkspace();
 
-      // Create tree items with parent information
-      return this.projects.map((project) => {
-        const parentProject = this.findParentProject(project.path);
-        return new ProjectTreeItem(
-          project.name,
-          project.path,
-          project.packageManager,
-          vscode.TreeItemCollapsibleState.Expanded,
-          parentProject,
-        );
-      });
+      const rootItems: vscode.TreeItem[] = [
+        new TasksGroupTreeItem(),
+        ...this.projects.map((project) => {
+          const parentProject = this.findParentProject(project.path);
+          return new ProjectTreeItem(
+            project.name,
+            project.path,
+            project.packageManager,
+            vscode.TreeItemCollapsibleState.Expanded,
+            parentProject,
+          );
+        }),
+      ];
+
+      return rootItems;
+    }
+
+    if (element instanceof TasksGroupTreeItem) {
+      const tasks = await this.taskService.getTasks();
+      return tasks.map((task) => new TaskTreeItem(task));
     }
 
     if (element instanceof ProjectTreeItem) {
@@ -88,7 +103,6 @@ export class ProjectTreeProvider
         return [];
       }
 
-      // Show package manager dropdown, update settings, license, scripts group, and dependency groups
       return [
         new PackageManagerDropdownItem(project.packageManager, project.path),
         new UpdateSettingsItem(project.path, project.updateSettings),

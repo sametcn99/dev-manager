@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { PackageManagerService } from "../services/PackageManagerService";
+import { TaskService } from "../services/TaskService";
 import { ProjectCommandHandler } from "./ProjectCommandHandler";
 import { PackageManagerCommandHandler } from "./PackageManagerCommandHandler";
 import { DependencyCommandHandler } from "./DependencyCommandHandler";
@@ -9,6 +10,7 @@ import { ScriptCommandHandler } from "./ScriptCommandHandler";
 import { UpdateNotificationCommandHandler } from "./UpdateNotificationCommandHandler";
 import { PackageSizeCommandHandler } from "./PackageSizeCommandHandler";
 import { LicenseCommandHandler } from "./LicenseCommandHandler";
+import { TaskCommandHandler } from "./TaskCommandHandler";
 
 export class CommandHandlers {
   private projectCommandHandler: ProjectCommandHandler;
@@ -19,6 +21,7 @@ export class CommandHandlers {
   private updateNotificationCommandHandler: UpdateNotificationCommandHandler;
   private licenseCommandHandler: LicenseCommandHandler;
   private packageSizeCommandHandler: PackageSizeCommandHandler;
+  private taskCommandHandler: TaskCommandHandler;
 
   constructor(
     private projectTreeProvider: ProjectTreeProvider,
@@ -46,6 +49,10 @@ export class CommandHandlers {
       projectTreeProvider,
       context,
     );
+    this.taskCommandHandler = new TaskCommandHandler(
+      projectTreeProvider,
+      new TaskService(),
+    );
   }
 
   public registerCommands(context: vscode.ExtensionContext): void {
@@ -57,5 +64,6 @@ export class CommandHandlers {
     this.updateNotificationCommandHandler.registerCommands(context);
     this.licenseCommandHandler.registerCommands(context);
     this.packageSizeCommandHandler.registerCommands(context);
+    this.taskCommandHandler.registerCommands(context);
   }
 }
