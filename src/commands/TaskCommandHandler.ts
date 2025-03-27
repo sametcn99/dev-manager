@@ -112,13 +112,18 @@ export class TaskCommandHandler {
     }
 
     try {
+      // Remove leading slash if present
+      const normalizedTaskId = info.taskId.startsWith("/")
+        ? info.taskId.substring(1)
+        : info.taskId;
+
       const tasks = await this.taskService.getTasks();
-      const taskToRun = tasks.find((task) => task.name === info.taskId);
+      const taskToRun = tasks.find((task) => task.name === normalizedTaskId);
 
       if (taskToRun) {
         await vscode.tasks.executeTask(taskToRun);
       } else {
-        vscode.window.showErrorMessage(`Task "${info.taskId}" not found`);
+        vscode.window.showErrorMessage(`Task "${normalizedTaskId}" not found`);
       }
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to run task: ${error}`);

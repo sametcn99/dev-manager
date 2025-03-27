@@ -36,7 +36,35 @@ export interface CustomTaskDefinition extends vscode.TaskDefinition {
 
 export class TaskService {
   async getTasks(): Promise<vscode.Task[]> {
-    return await vscode.tasks.fetchTasks();
+    try {
+      // Get all workspace tasks
+      const workspaceTasks = await vscode.tasks.fetchTasks();
+
+      // Also get any custom tasks from tasks.json
+      const workspaceFolders = vscode.workspace.workspaceFolders || [];
+      const customTasks: vscode.Task[] = [];
+
+      for (const folder of workspaceFolders) {
+        const config = vscode.workspace.getConfiguration("tasks", folder.uri);
+        const tasks = config.get("tasks", []) as CustomTaskDefinition[];
+
+        for (const taskDef of tasks) {
+          const task = await this.createTask(taskDef, folder);
+          customTasks.push(task);
+        }
+      }
+
+      // Combine and deduplicate tasks
+      const allTasks = [...workspaceTasks, ...customTasks];
+      const uniqueTasks = Array.from(
+        new Map(allTasks.map((task) => [task.name, task])).values(),
+      );
+
+      return uniqueTasks;
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      return [];
+    }
   }
 
   async createTask(

@@ -29,8 +29,24 @@ export class TaskWebView {
       },
     );
 
-    // Initialize the webview content
-    this._initializeWebview();
+    // Initialize the webview content with progress indicator
+    vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "Loading task editor...",
+        cancellable: false,
+      },
+      async () => {
+        await this._initializeWebview();
+
+        // Initialize the form with existing task data if provided
+        this._panel.webview.postMessage({
+          type: "init",
+          task: initialTask,
+          projectPaths: this.projectPaths || [],
+        });
+      },
+    );
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
@@ -48,13 +64,6 @@ export class TaskWebView {
       null,
       this._disposables,
     );
-
-    // Initialize the form with existing task data if provided
-    this._panel.webview.postMessage({
-      type: "init",
-      task: initialTask,
-      projectPaths: this.projectPaths || [],
-    });
   }
 
   private async _initializeWebview() {
