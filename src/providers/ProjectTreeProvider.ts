@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { ProjectService } from "../services/ProjectService";
-import { TaskService } from "../services/TaskService";
 import {
   ProjectTreeItem,
   DependencyTreeItem,
@@ -15,6 +14,7 @@ import {
   TaskTreeItem,
 } from "../views/TreeItems";
 import { ProjectInfo } from "../types/ProjectInfo";
+import { TaskService } from "../services/TaskService";
 
 export class ProjectTreeProvider
   implements vscode.TreeDataProvider<vscode.TreeItem>
@@ -25,7 +25,6 @@ export class ProjectTreeProvider
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
   private projects: ProjectInfo[] = [];
   private projectService: ProjectService;
-  private taskService: TaskService;
 
   private readonly availablePackageManagers: PackageManager[] = [
     "npm",
@@ -34,9 +33,8 @@ export class ProjectTreeProvider
     "bun",
   ];
 
-  constructor() {
+  constructor(private taskService: TaskService) {
     this.projectService = new ProjectService();
-    this.taskService = new TaskService();
   }
 
   refresh(element?: vscode.TreeItem): void {

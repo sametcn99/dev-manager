@@ -1,12 +1,16 @@
 import * as vscode from "vscode";
-import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { TaskService } from "../services/TaskService";
+import { TaskWebView } from "../views/TaskWebView";
+import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 
 export class TaskCommandHandler {
-  constructor(
-    private projectTreeProvider: ProjectTreeProvider,
-    private taskService: TaskService,
-  ) {}
+  private taskService: TaskService;
+  private projectTreeProvider: ProjectTreeProvider;
+
+  constructor(private readonly context: vscode.ExtensionContext) {
+    this.taskService = new TaskService();
+    this.projectTreeProvider = new ProjectTreeProvider(this.taskService);
+  }
 
   public registerCommands(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
@@ -29,173 +33,95 @@ export class TaskCommandHandler {
     );
   }
 
-  private async handleCreateTask(): Promise<void> {
-    const taskName = await vscode.window.showInputBox({
-      title: "Task Name",
-      placeHolder: "Enter task name...",
-      validateInput: (value) => {
-        return value ? null : "Task name is required";
-      },
-    });
-
-    if (!taskName) {
-      return;
-    }
-
-    const taskType = await vscode.window.showQuickPick(
-      [
-        { label: "build", description: "Build task" },
-        { label: "test", description: "Test task" },
-        { label: "serve", description: "Serve task" },
-        { label: "lint", description: "Lint task" },
-        { label: "custom", description: "Custom task" },
-      ],
+  private async handleCreateTask(workspaceFolder?: vscode.WorkspaceFolder) {
+    await vscode.window.withProgress(
       {
-        title: "Task Type",
-        placeHolder: "Select task type...",
+        location: vscode.ProgressLocation.Notification,
+        title: "Opening task editor...",
+        cancellable: false,
+      },
+      async () => {
+        const projects = await this.projectTreeProvider.getAllProjects();
+        const projectPaths = projects.map((p) => p.path);
+        new TaskWebView(
+          this.context.extensionUri,
+          this.taskService,
+          undefined,
+          workspaceFolder,
+          projectPaths,
+        );
       },
     );
-
-    if (!taskType) {
-      return;
-    }
-
-    const command = await vscode.window.showInputBox({
-      title: "Task Command",
-      placeHolder: "Enter command to run...",
-      validateInput: (value) => {
-        return value ? null : "Command is required";
-      },
-    });
-
-    if (!command) {
-      return;
-    }
-
-    const description = await vscode.window.showInputBox({
-      title: "Task Description (Optional)",
-      placeHolder: "Enter task description...",
-    });
-
-    const isBackground = await vscode.window.showQuickPick(
-      [
-        { label: "No", description: "Run in foreground" },
-        { label: "Yes", description: "Run in background" },
-      ],
-      {
-        title: "Background Task?",
-        placeHolder: "Should this task run in the background?",
-      },
-    );
-
-    if (!isBackground) {
-      return;
-    }
-
-    const task: TaskConfig = {
-      name: taskName,
-      type: taskType.label as TaskType,
-      command,
-      description,
-      isBackground: isBackground.label === "Yes",
-    };
-
-    await this.taskService.addTask(task);
-    this.projectTreeProvider.refresh();
   }
 
-  private async handleEditTask(task: TaskConfig): Promise<void> {
-    const taskName = await vscode.window.showInputBox({
-      title: "Task Name",
-      value: task.name,
-      placeHolder: "Enter task name...",
-      validateInput: (value) => {
-        return value ? null : "Task name is required";
-      },
-    });
-
-    if (!taskName) {
+  private async handleEditTask(task: vscode.Task) {
+    if (!task.definition) {
+      vscode.window.showErrorMessage(
+        "Cannot edit this task: missing task definition",
+      );
       return;
     }
 
-    const taskTypeItems: { label: TaskType; description: string }[] = [
-      { label: "build", description: "Build task" },
-      { label: "test", description: "Test task" },
-      { label: "serve", description: "Serve task" },
-      { label: "lint", description: "Lint task" },
-      { label: "custom", description: "Custom task" },
-    ];
-
-    const taskType = await vscode.window.showQuickPick(taskTypeItems, {
-      title: "Task Type",
-      placeHolder: "Select task type...",
-    });
-
-    if (!taskType) {
+    const scope = task.scope;
+    if (!scope || typeof scope === "number") {
+      vscode.window.showErrorMessage("Cannot edit this task: invalid scope");
       return;
     }
 
-    const command = await vscode.window.showInputBox({
-      title: "Task Command",
-      value: task.command,
-      placeHolder: "Enter command to run...",
-      validateInput: (value) => {
-        return value ? null : "Command is required";
-      },
-    });
-
-    if (!command) {
-      return;
-    }
-
-    const description = await vscode.window.showInputBox({
-      title: "Task Description (Optional)",
-      value: task.description,
-      placeHolder: "Enter task description...",
-    });
-
-    const isBackground = await vscode.window.showQuickPick(
-      [
-        { label: "No", description: "Run in foreground" },
-        { label: "Yes", description: "Run in background" },
-      ],
-      {
-        title: "Background Task?",
-        placeHolder: "Should this task run in the background?",
-      },
+    const projects = await this.projectTreeProvider.getAllProjects();
+    const projectPaths = projects.map((p) => p.path);
+    new TaskWebView(
+      this.context.extensionUri,
+      this.taskService,
+      task.definition,
+      scope,
+      projectPaths,
     );
-
-    if (!isBackground) {
-      return;
-    }
-
-    const updatedTask: TaskConfig = {
-      name: taskName,
-      type: taskType.label,
-      command,
-      description,
-      isBackground: isBackground.label === "Yes",
-    };
-
-    await this.taskService.updateTask(task.name, updatedTask);
-    this.projectTreeProvider.refresh();
   }
 
-  private async handleDeleteTask(task: TaskConfig): Promise<void> {
-    const confirm = await vscode.window.showWarningMessage(
-      `Are you sure you want to delete task '${task.name}'?`,
+  private async handleDeleteTask(task: vscode.Task) {
+    if (!task.name || !task.scope || typeof task.scope === "number") {
+      vscode.window.showErrorMessage(
+        "Cannot delete this task: invalid task configuration",
+      );
+      return;
+    }
+
+    const answer = await vscode.window.showWarningMessage(
+      `Are you sure you want to delete task "${task.name}"?`,
       { modal: true },
       "Yes",
       "No",
     );
 
-    if (confirm === "Yes") {
-      await this.taskService.deleteTask(task.name);
-      this.projectTreeProvider.refresh();
+    if (answer === "Yes") {
+      try {
+        await this.taskService.deleteTask(task.name, task.scope);
+        vscode.window.showInformationMessage(
+          `Task "${task.name}" deleted successfully`,
+        );
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to delete task: ${error}`);
+      }
     }
   }
 
-  private async handleRunTask(task: TaskConfig): Promise<void> {
-    await this.taskService.runTask(task);
+  private async handleRunTask(info: { taskId: string }) {
+    if (!info?.taskId) {
+      return;
+    }
+
+    try {
+      const tasks = await this.taskService.getTasks();
+      const taskToRun = tasks.find((task) => task.name === info.taskId);
+
+      if (taskToRun) {
+        await vscode.tasks.executeTask(taskToRun);
+      } else {
+        vscode.window.showErrorMessage(`Task "${info.taskId}" not found`);
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Failed to run task: ${error}`);
+    }
   }
 }

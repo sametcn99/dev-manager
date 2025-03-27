@@ -24,6 +24,7 @@ export class CommandHandlers {
   constructor(
     private projectTreeProvider: ProjectTreeProvider,
     private packageManagerService: PackageManagerService,
+    private taskService: TaskService,
     private context: vscode.ExtensionContext,
   ) {
     this.projectCommandHandler = new ProjectCommandHandler(projectTreeProvider);
@@ -43,10 +44,7 @@ export class CommandHandlers {
       projectTreeProvider,
       context,
     );
-    this.taskCommandHandler = new TaskCommandHandler(
-      projectTreeProvider,
-      new TaskService(),
-    );
+    this.taskCommandHandler = new TaskCommandHandler(context);
   }
 
   public registerCommands(context: vscode.ExtensionContext): void {

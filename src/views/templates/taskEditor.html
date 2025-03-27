@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Editor</title>
+    <style>
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        background-color: var(--vscode-editor-background);
+        padding: 20px;
+        margin: 0;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-section {
+        border: 1px solid var(--vscode-panel-border);
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+      }
+      .form-section h3 {
+        margin-top: 0;
+        color: var(--vscode-editor-foreground);
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--vscode-input-foreground);
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--vscode-input-border);
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border-radius: 2px;
+      }
+      .button-group {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      .primary {
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+      .secondary {
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+      .input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .input-group input {
+        flex: 1;
+      }
+      .input-group button {
+        flex-shrink: 0;
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .checkbox-group input[type="checkbox"] {
+        width: auto;
+      }
+      .env-pair {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .env-pair input {
+        flex: 1;
+      }
+      .env-pair button {
+        flex-shrink: 0;
+      }
+      .tab-container {
+        margin-bottom: 20px;
+      }
+      .tab-buttons {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 15px;
+      }
+      .tab-button {
+        padding: 8px 15px;
+        cursor: pointer;
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: none;
+        border-radius: 3px;
+      }
+      .tab-button.active {
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .dependency-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .dependency-item input,
+      .dependency-item select {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="taskForm">
+      <div class="tab-container">
+        <div class="tab-buttons">
+          <button
+            type="button"
+            class="tab-button active"
+            onclick="showTab('basic')"
+          >
+            Basic
+          </button>
+          <button
+            type="button"
+            class="tab-button"
+            onclick="showTab('execution')"
+          >
+            Execution
+          </button>
+          <button
+            type="button"
+            class="tab-button"
+            onclick="showTab('presentation')"
+          >
+            Presentation
+          </button>
+          <button
+            type="button"
+            class="tab-button"
+            onclick="showTab('dependencies')"
+          >
+            Dependencies
+          </button>
+          <button
+            type="button"
+            class="tab-button"
+            onclick="showTab('advanced')"
+          >
+            Advanced
+          </button>
+        </div>
+
+        <!-- Basic Tab -->
+        <div id="basicTab" class="tab-content active">
+          <div class="form-group">
+            <label for="taskLabel">Task Label *</label>
+            <input type="text" id="taskLabel" required />
+          </div>
+          <div class="form-group">
+            <label for="taskType">Task Type *</label>
+            <select id="taskType" required>
+              <option value="shell">Shell</option>
+              <option value="npm">npm</option>
+              <option value="typescript">TypeScript</option>
+              <option value="grunt">Grunt</option>
+              <option value="gulp">Gulp</option>
+              <option value="jake">Jake</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="command">Command *</label>
+            <input type="text" id="command" required />
+          </div>
+          <div class="form-group">
+            <label for="detail">Detail/Description</label>
+            <input type="text" id="detail" />
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="isBackground" />
+              <label for="isBackground">Run in Background</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Execution Tab -->
+        <div id="executionTab" class="tab-content">
+          <div class="form-section">
+            <h3>Shell Options</h3>
+            <div class="form-group">
+              <label for="shellExecutable">Shell Executable</label>
+              <input
+                type="text"
+                id="shellExecutable"
+                placeholder="e.g., bash, cmd.exe, powershell"
+              />
+            </div>
+            <div class="form-group">
+              <label for="shellArgs">Shell Arguments</label>
+              <input type="text" id="shellArgs" placeholder="e.g., -c, /C" />
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Working Directory & Environment</h3>
+            <div class="form-group">
+              <label for="cwdSelect">Working Directory</label>
+              <select id="cwdSelect" onchange="handleCwdSelection()">
+                <option value="custom">Custom Path</option>
+                <!-- Project paths will be populated dynamically -->
+              </select>
+              <div id="customCwdInput" style="margin-top: 8px; display: block">
+                <input
+                  type="text"
+                  id="cwd"
+                  placeholder="${workspaceFolder}/subfolder"
+                />
+              </div>
+            </div>
+
+            <script>
+              function handleCwdSelection() {
+                const select = document.getElementById("cwdSelect");
+                const customInput = document.getElementById("customCwdInput");
+                const cwdInput = document.getElementById("cwd");
+
+                if (select.value === "custom") {
+                  customInput.style.display = "block";
+                } else {
+                  customInput.style.display = "none";
+                  cwdInput.value = select.value;
+                }
+              }
+
+              // Initialize project paths in the dropdown
+              window.addEventListener("message", (event) => {
+                const message = event.data;
+                if (message.type === "init") {
+                  const select = document.getElementById("cwdSelect");
+                  const projectPaths = message.projectPaths || [];
+
+                  // Add project paths to the dropdown
+                  projectPaths.forEach((path) => {
+                    const option = document.createElement("option");
+                    option.value = path;
+                    option.textContent = path;
+                    select.appendChild(option);
+                  });
+
+                  // If editing an existing task, select the current working directory
+                  if (message.task?.options?.cwd) {
+                    const cwdValue = message.task.options.cwd;
+                    const matchingOption = Array.from(select.options).find(
+                      (opt) => opt.value === cwdValue,
+                    );
+
+                    if (matchingOption) {
+                      select.value = cwdValue;
+                    } else {
+                      select.value = "custom";
+                      document.getElementById("cwd").value = cwdValue;
+                    }
+                    handleCwdSelection();
+                  }
+                }
+              });
+            </script>
+
+            <div class="form-group">
+              <label>Environment Variables</label>
+              <div id="envVars"></div>
+              <button type="button" class="secondary" onclick="addEnvVar()">
+                Add Environment Variable
+              </button>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Problem Matchers</h3>
+            <div class="form-group">
+              <div class="input-group">
+                <select id="problemMatcherSelect">
+                  <option value="$tsc">TypeScript ($tsc)</option>
+                  <option value="$eslint-compact">
+                    ESLint ($eslint-compact)
+                  </option>
+                  <option value="$jshint">JSHint ($jshint)</option>
+                  <option value="$jshint-stylish">
+                    JSHint Stylish ($jshint-stylish)
+                  </option>
+                  <option value="$node">Node ($node)</option>
+                  <option value="$npm">npm ($npm)</option>
+                  <option value="$gulp-tsc">Gulp TypeScript ($gulp-tsc)</option>
+                  <option value="$msCompile">
+                    MSBuild/Visual Studio ($msCompile)
+                  </option>
+                  <option value="$lessCompile">Less ($lessCompile)</option>
+                  <option value="$sass-compile">Sass ($sass-compile)</option>
+                </select>
+                <button
+                  type="button"
+                  class="secondary"
+                  onclick="addProblemMatcher()"
+                >
+                  Add
+                </button>
+              </div>
+              <div id="problemMatchers" class="problem-matchers"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Presentation Tab -->
+        <div id="presentationTab" class="tab-content">
+          <div class="form-group">
+            <label for="reveal">Terminal Reveal</label>
+            <select id="reveal">
+              <option value="always">Always</option>
+              <option value="silent">Silent</option>
+              <option value="never">Never</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="panel">Panel Behavior</label>
+            <select id="panel">
+              <option value="shared">Shared</option>
+              <option value="dedicated">Dedicated</option>
+              <option value="new">New</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="group">Terminal Group</label>
+            <input type="text" id="group" placeholder="e.g., build" />
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="echo" />
+              <label for="echo">Echo Command</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="focus" />
+              <label for="focus">Focus Terminal</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="clear" />
+              <label for="clear">Clear Terminal Before Execution</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="showReuseMessage" />
+              <label for="showReuseMessage">Show Terminal Reuse Message</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dependencies Tab -->
+        <div id="dependenciesTab" class="tab-content">
+          <div class="form-group">
+            <label for="dependsOrder">Dependency Execution Order</label>
+            <select id="dependsOrder">
+              <option value="sequence">Sequential</option>
+              <option value="parallel">Parallel</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Task Dependencies</label>
+            <div id="dependencies"></div>
+            <button type="button" class="secondary" onclick="addDependency()">
+              Add Dependency
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Tab -->
+        <div id="advancedTab" class="tab-content">
+          <div class="form-group">
+            <label for="taskGroup">Task Group</label>
+            <select id="taskGroup">
+              <option value="">None</option>
+              <option value="build">Build</option>
+              <option value="test">Test</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="groupIsDefault" />
+              <label for="groupIsDefault">Set as Default Task for Group</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="runOn">Run On</label>
+            <select id="runOn">
+              <option value="default">Default</option>
+              <option value="folderOpen">Folder Open</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="reevaluateOnRerun" />
+              <label for="reevaluateOnRerun">Re-evaluate on Rerun</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="instanceLimit">Instance Limit</label>
+            <input type="number" id="instanceLimit" min="1" placeholder="1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="primary">Save Task</button>
+        <button type="button" class="secondary" onclick="cancelEdit()">
+          Cancel
+        </button>
+      </div>
+    </form>
+    <script>
+      const vscode = acquireVsCodeApi();
+      let problemMatchers = [];
+      let envVars = new Map();
+      let dependencies = [];
+
+      function showTab(tabName) {
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((tab) => tab.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-button")
+          .forEach((button) => button.classList.remove("active"));
+
+        document.getElementById(tabName + "Tab").classList.add("active");
+        event.currentTarget.classList.add("active");
+      }
+
+      function addProblemMatcher() {
+        const select = document.getElementById("problemMatcherSelect");
+        const matcher = select.value;
+        if (!problemMatchers.includes(matcher)) {
+          problemMatchers.push(matcher);
+          updateProblemMatchersList();
+        }
+      }
+
+      function removeProblemMatcher(matcher) {
+        problemMatchers = problemMatchers.filter((m) => m !== matcher);
+        updateProblemMatchersList();
+      }
+
+      function updateProblemMatchersList() {
+        const container = document.getElementById("problemMatchers");
+        container.innerHTML = "";
+        problemMatchers.forEach((matcher) => {
+          const div = document.createElement("div");
+          div.className = "dependency-item";
+          div.innerHTML = `
+                    <span>${matcher}</span>
+                    <button type="button" class="secondary" onclick="removeProblemMatcher('${matcher}')">Remove</button>
+                `;
+          container.appendChild(div);
+        });
+      }
+
+      function addEnvVar() {
+        const envVarsContainer = document.getElementById("envVars");
+        const id = Date.now().toString();
+
+        const div = document.createElement("div");
+        div.className = "env-pair";
+        div.innerHTML = `
+                <input type="text" placeholder="Variable name" class="env-key" data-id="${id}">
+                <input type="text" placeholder="Value" class="env-value" data-id="${id}">
+                <button type="button" class="secondary" onclick="removeEnvVar('${id}')">Remove</button>
+            `;
+
+        envVarsContainer.appendChild(div);
+        envVars.set(id, { key: "", value: "" });
+
+        const keyInput = div.querySelector(".env-key");
+        const valueInput = div.querySelector(".env-value");
+
+        keyInput.addEventListener("input", (e) => {
+          const pair = envVars.get(id);
+          envVars.set(id, { ...pair, key: e.target.value });
+        });
+
+        valueInput.addEventListener("input", (e) => {
+          const pair = envVars.get(id);
+          envVars.set(id, { ...pair, value: e.target.value });
+        });
+      }
+
+      function removeEnvVar(id) {
+        const element = document.querySelector(
+          `.env-pair input[data-id="${id}"]`,
+        ).parentNode;
+        element.remove();
+        envVars.delete(id);
+      }
+
+      function addDependency() {
+        const container = document.getElementById("dependencies");
+        const id = Date.now().toString();
+
+        const div = document.createElement("div");
+        div.className = "dependency-item";
+        div.innerHTML = `
+                <input type="text" placeholder="Task name" class="dep-task" data-id="${id}">
+                <select class="dep-type" data-id="${id}">
+                    <option value="">Task name only</option>
+                    <option value="npm">npm</option>
+                    <option value="shell">shell</option>
+                    <option value="typescript">typescript</option>
+                </select>
+                <button type="button" class="secondary" onclick="removeDependency('${id}')">Remove</button>
+            `;
+
+        container.appendChild(div);
+        dependencies.push({ id, task: "", type: "" });
+
+        const taskInput = div.querySelector(".dep-task");
+        const typeSelect = div.querySelector(".dep-type");
+
+        taskInput.addEventListener("input", (e) => {
+          const index = dependencies.findIndex((d) => d.id === id);
+          if (index !== -1) {
+            dependencies[index].task = e.target.value;
+          }
+        });
+
+        typeSelect.addEventListener("change", (e) => {
+          const index = dependencies.findIndex((d) => d.id === id);
+          if (index !== -1) {
+            dependencies[index].type = e.target.value;
+          }
+        });
+      }
+
+      function removeDependency(id) {
+        const element = document.querySelector(
+          `.dependency-item input[data-id="${id}"]`,
+        ).parentNode;
+        element.remove();
+        dependencies = dependencies.filter((d) => d.id !== id);
+      }
+
+      document.getElementById("taskForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        // Convert envVars Map to object
+        const envVarsObject = {};
+        envVars.forEach((value) => {
+          if (value.key) {
+            envVarsObject[value.key] = value.value;
+          }
+        });
+
+        // Convert dependencies array to proper format
+        const formattedDeps = dependencies
+          .filter((dep) => dep.task)
+          .map((dep) => {
+            if (dep.type) {
+              return { type: dep.type, task: dep.task };
+            }
+            return dep.task;
+          });
+
+        const taskGroup = document.getElementById("taskGroup").value;
+        const groupData = taskGroup
+          ? {
+              kind: taskGroup,
+              isDefault: document.getElementById("groupIsDefault").checked,
+            }
+          : undefined;
+
+        const taskData = {
+          label: document.getElementById("taskLabel").value,
+          type: document.getElementById("taskType").value,
+          command: document.getElementById("command").value,
+          detail: document.getElementById("detail").value || undefined,
+          isBackground: document.getElementById("isBackground").checked,
+
+          options: {
+            cwd: document.getElementById("cwd").value || undefined,
+            env:
+              Object.keys(envVarsObject).length > 0 ? envVarsObject : undefined,
+            shell: {
+              executable:
+                document.getElementById("shellExecutable").value || undefined,
+              args: document.getElementById("shellArgs").value
+                ? document
+                    .getElementById("shellArgs")
+                    .value.split(",")
+                    .map((arg) => arg.trim())
+                : undefined,
+            },
+          },
+
+          presentation: {
+            echo: document.getElementById("echo").checked,
+            reveal: document.getElementById("reveal").value,
+            focus: document.getElementById("focus").checked,
+            panel: document.getElementById("panel").value,
+            showReuseMessage:
+              document.getElementById("showReuseMessage").checked,
+            clear: document.getElementById("clear").checked,
+            group: document.getElementById("group").value || undefined,
+          },
+
+          problemMatcher:
+            problemMatchers.length > 0 ? problemMatchers : undefined,
+          group: groupData,
+          dependsOn: formattedDeps.length > 0 ? formattedDeps : undefined,
+          dependsOrder: document.getElementById("dependsOrder").value,
+
+          runOptions: {
+            reevaluateOnRerun:
+              document.getElementById("reevaluateOnRerun").checked,
+            runOn: document.getElementById("runOn").value,
+            instanceLimit: document.getElementById("instanceLimit").value
+              ? parseInt(document.getElementById("instanceLimit").value)
+              : undefined,
+          },
+        };
+
+        // Clean up undefined values recursively
+        function cleanObject(obj) {
+          Object.keys(obj).forEach((key) => {
+            if (obj[key] && typeof obj[key] === "object") {
+              cleanObject(obj[key]);
+              if (Object.keys(obj[key]).length === 0) {
+                delete obj[key];
+              }
+            } else if (obj[key] === undefined) {
+              delete obj[key];
+            }
+          });
+          return obj;
+        }
+
+        vscode.postMessage({ type: "save", task: cleanObject(taskData) });
+      });
+
+      function cancelEdit() {
+        vscode.postMessage({ type: "cancel" });
+      }
+
+      // Handle messages from extension
+      window.addEventListener("message", (event) => {
+        const message = event.data;
+        switch (message.type) {
+          case "init":
+            if (message.task) {
+              // Basic fields
+              document.getElementById("taskLabel").value =
+                message.task.label || "";
+              document.getElementById("taskType").value =
+                message.task.type || "shell";
+              document.getElementById("command").value =
+                message.task.command || "";
+              document.getElementById("detail").value =
+                message.task.detail || "";
+              document.getElementById("isBackground").checked =
+                message.task.isBackground || false;
+
+              // Shell options
+              if (message.task.options?.shell) {
+                document.getElementById("shellExecutable").value =
+                  message.task.options.shell.executable || "";
+                document.getElementById("shellArgs").value =
+                  message.task.options.shell.args?.join(", ") || "";
+              }
+              document.getElementById("cwd").value =
+                message.task.options?.cwd || "";
+
+              // Environment variables
+              if (message.task.options?.env) {
+                Object.entries(message.task.options.env).forEach(
+                  ([key, value]) => {
+                    const id = Date.now() + Math.random();
+                    envVars.set(id.toString(), { key, value });
+                    const envVarsContainer = document.getElementById("envVars");
+                    const div = document.createElement("div");
+                    div.className = "env-pair";
+                    div.innerHTML = `
+                                    <input type="text" value="${key}" class="env-key" data-id="${id}">
+                                    <input type="text" value="${value}" class="env-value" data-id="${id}">
+                                    <button type="button" class="secondary" onclick="removeEnvVar('${id}')">Remove</button>
+                                `;
+                    envVarsContainer.appendChild(div);
+                  },
+                );
+              }
+
+              // Problem matchers
+              if (message.task.problemMatcher) {
+                problemMatchers = Array.isArray(message.task.problemMatcher)
+                  ? message.task.problemMatcher
+                  : [message.task.problemMatcher];
+                updateProblemMatchersList();
+              }
+
+              // Dependencies
+              if (message.task.dependsOn) {
+                const deps = Array.isArray(message.task.dependsOn)
+                  ? message.task.dependsOn
+                  : [message.task.dependsOn];
+                deps.forEach((dep) => {
+                  const id = Date.now() + Math.random();
+                  const depData =
+                    typeof dep === "string"
+                      ? { task: dep, type: "" }
+                      : { task: dep.task, type: dep.type };
+                  dependencies.push({ id: id.toString(), ...depData });
+
+                  const container = document.getElementById("dependencies");
+                  const div = document.createElement("div");
+                  div.className = "dependency-item";
+                  div.innerHTML = `
+                                    <input type="text" value="${depData.task}" class="dep-task" data-id="${id}">
+                                    <select class="dep-type" data-id="${id}">
+                                        <option value="">Task name only</option>
+                                        <option value="npm" ${depData.type === "npm" ? "selected" : ""}>npm</option>
+                                        <option value="shell" ${depData.type === "shell" ? "selected" : ""}>shell</option>
+                                        <option value="typescript" ${depData.type === "typescript" ? "selected" : ""}>typescript</option>
+                                    </select>
+                                    <button type="button" class="secondary" onclick="removeDependency('${id}')">Remove</button>
+                                `;
+                  container.appendChild(div);
+                });
+              }
+              document.getElementById("dependsOrder").value =
+                message.task.dependsOrder || "sequence";
+
+              // Presentation options
+              if (message.task.presentation) {
+                document.getElementById("reveal").value =
+                  message.task.presentation.reveal || "always";
+                document.getElementById("panel").value =
+                  message.task.presentation.panel || "shared";
+                document.getElementById("group").value =
+                  message.task.presentation.group || "";
+                document.getElementById("echo").checked =
+                  message.task.presentation.echo || false;
+                document.getElementById("focus").checked =
+                  message.task.presentation.focus || false;
+                document.getElementById("clear").checked =
+                  message.task.presentation.clear || false;
+                document.getElementById("showReuseMessage").checked =
+                  message.task.presentation.showReuseMessage || false;
+              }
+
+              // Group configuration
+              if (message.task.group) {
+                document.getElementById("taskGroup").value =
+                  message.task.group.kind || "";
+                document.getElementById("groupIsDefault").checked =
+                  message.task.group.isDefault || false;
+              }
+
+              // Run options
+              if (message.task.runOptions) {
+                document.getElementById("reevaluateOnRerun").checked =
+                  message.task.runOptions.reevaluateOnRerun || false;
+                document.getElementById("runOn").value =
+                  message.task.runOptions.runOn || "default";
+                document.getElementById("instanceLimit").value =
+                  message.task.runOptions.instanceLimit || "";
+              }
+            }
+            break;
+        }
+      });
+    </script>
+  </body>
+</html>

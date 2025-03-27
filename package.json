@@ -162,16 +162,6 @@
           "group": "navigation@2"
         },
         {
-          "command": "dev-manager.runScriptAcrossProjects",
-          "when": "view == devManagerProjects",
-          "group": "1_automation@1"
-        },
-        {
-          "command": "dev-manager.bulkManageDependencies",
-          "when": "view == devManagerProjects",
-          "group": "1_automation@2"
-        },
-        {
           "command": "dev-manager.installAllDependencies",
           "when": "view == devManagerProjects",
           "group": "2_modification"
@@ -296,6 +286,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^21.1.1",
+    "@picocss/pico": "^2.1.1",
     "semver": "^7.7.1",
     "uuid": "^11.1.0"
   },

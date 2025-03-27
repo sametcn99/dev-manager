@@ -1,81 +1,190 @@
 import * as vscode from "vscode";
 
+export interface CustomTaskDefinition extends vscode.TaskDefinition {
+  label?: string;
+  command?: string;
+  type: string;
+  isBackground?: boolean;
+  problemMatcher?: string[];
+  group?: {
+    kind?: "build" | "test";
+    isDefault?: boolean;
+  };
+  detail?: string;
+  presentation?: {
+    echo?: boolean;
+    reveal?: "always" | "silent" | "never";
+    focus?: boolean;
+    panel?: "shared" | "dedicated" | "new";
+    showReuseMessage?: boolean;
+    clear?: boolean;
+  };
+  options?: {
+    cwd?: string;
+    env?: { [key: string]: string };
+    shell?: {
+      executable?: string;
+      args?: string[];
+    };
+  };
+  runOptions?: {
+    reevaluateOnRerun?: boolean;
+  };
+  dependsOn?: Array<string | { type: string; task: string }>;
+  dependsOrder?: "parallel" | "sequence";
+}
+
 export class TaskService {
-  private configFilePath: string;
-
-  constructor() {
-    // Get workspace root
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      throw new Error("No workspace folder found");
-    }
-    this.configFilePath = vscode.Uri.joinPath(
-      workspaceFolder.uri,
-      "dev-manager.json",
-    ).fsPath;
+  async getTasks(): Promise<vscode.Task[]> {
+    return await vscode.tasks.fetchTasks();
   }
 
-  public async getConfig(): Promise<DevManagerConfig> {
-    try {
-      const configUri = vscode.Uri.file(this.configFilePath);
-      const content = await vscode.workspace.fs.readFile(configUri);
-      return JSON.parse(content.toString());
-    } catch (error) {
-      // Return empty config if file doesn't exist
-      return {};
+  async createTask(
+    taskConfig: CustomTaskDefinition,
+    scope: vscode.WorkspaceFolder | vscode.TaskScope,
+  ): Promise<vscode.Task> {
+    const newTask = new vscode.Task(
+      taskConfig,
+      scope,
+      taskConfig.label || "New Task",
+      taskConfig.type,
+    );
+
+    // Configure execution
+    if ("command" in taskConfig && taskConfig.command) {
+      const shellOptions: vscode.ShellExecutionOptions = {};
+
+      if (taskConfig.options?.cwd) {
+        shellOptions.cwd = taskConfig.options.cwd;
+      }
+      if (taskConfig.options?.env) {
+        shellOptions.env = taskConfig.options.env;
+      }
+      if (taskConfig.options?.shell) {
+        shellOptions.executable = taskConfig.options.shell.executable;
+        shellOptions.shellArgs = taskConfig.options.shell.args;
+      }
+
+      newTask.execution = new vscode.ShellExecution(
+        taskConfig.command,
+        shellOptions,
+      );
+    }
+
+    // Configure background status
+    if (taskConfig.isBackground) {
+      newTask.isBackground = true;
+    }
+
+    // Configure problem matchers
+    if (taskConfig.problemMatcher) {
+      newTask.problemMatchers = taskConfig.problemMatcher;
+    }
+
+    // Configure group
+    if (taskConfig.group) {
+      if (taskConfig.group.kind === "build") {
+        newTask.group = taskConfig.group.isDefault
+          ? vscode.TaskGroup.Build
+          : vscode.TaskGroup.Build;
+      } else if (taskConfig.group.kind === "test") {
+        newTask.group = taskConfig.group.isDefault
+          ? vscode.TaskGroup.Test
+          : vscode.TaskGroup.Test;
+      }
+    }
+
+    // Configure presentation
+    if (taskConfig.presentation) {
+      newTask.presentationOptions = {
+        echo: taskConfig.presentation.echo,
+        reveal: this.getPresentationReveal(taskConfig.presentation.reveal),
+        focus: taskConfig.presentation.focus,
+        panel: this.getPresentationPanel(taskConfig.presentation.panel),
+        showReuseMessage: taskConfig.presentation.showReuseMessage,
+        clear: taskConfig.presentation.clear,
+      };
+    }
+
+    // Configure run options
+    if (taskConfig.runOptions) {
+      newTask.runOptions = {
+        reevaluateOnRerun: taskConfig.runOptions.reevaluateOnRerun,
+      };
+    }
+
+    // Add the task to workspace configuration
+    const wsConfig = vscode.workspace.getConfiguration("tasks");
+    const tasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    tasks.push(taskConfig);
+    await wsConfig.update("tasks", tasks, vscode.ConfigurationTarget.Workspace);
+
+    return newTask;
+  }
+
+  private getPresentationReveal(
+    reveal?: "always" | "silent" | "never",
+  ): vscode.TaskRevealKind {
+    switch (reveal) {
+      case "always":
+        return vscode.TaskRevealKind.Always;
+      case "silent":
+        return vscode.TaskRevealKind.Silent;
+      case "never":
+        return vscode.TaskRevealKind.Never;
+      default:
+        return vscode.TaskRevealKind.Always;
     }
   }
 
-  public async saveConfig(config: DevManagerConfig): Promise<void> {
-    const configUri = vscode.Uri.file(this.configFilePath);
-    await vscode.workspace.fs.writeFile(
-      configUri,
-      Buffer.from(JSON.stringify(config, null, 2)),
+  private getPresentationPanel(
+    panel?: "shared" | "dedicated" | "new",
+  ): vscode.TaskPanelKind {
+    switch (panel) {
+      case "shared":
+        return vscode.TaskPanelKind.Shared;
+      case "dedicated":
+        return vscode.TaskPanelKind.Dedicated;
+      case "new":
+        return vscode.TaskPanelKind.New;
+      default:
+        return vscode.TaskPanelKind.Shared;
+    }
+  }
+
+  async deleteTask(
+    taskId: string,
+    scope: vscode.WorkspaceFolder,
+  ): Promise<void> {
+    const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
+    const tasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const updatedTasks = tasks.filter((task) => task.label !== taskId);
+    await wsConfig.update(
+      "tasks",
+      updatedTasks,
+      vscode.ConfigurationTarget.Workspace,
     );
   }
 
-  public async getTasks(): Promise<TaskConfig[]> {
-    const config = await this.getConfig();
-    return config.tasks || [];
-  }
-
-  public async addTask(task: TaskConfig): Promise<void> {
-    const config = await this.getConfig();
-    const tasks = config.tasks || [];
-    tasks.push(task);
-    await this.saveConfig({ ...config, tasks });
-  }
-
-  public async updateTask(
-    taskName: string,
-    updatedTask: TaskConfig,
+  async editTask(
+    taskId: string,
+    newConfig: CustomTaskDefinition,
+    scope: vscode.WorkspaceFolder,
   ): Promise<void> {
-    const config = await this.getConfig();
-    const tasks = config.tasks || [];
-    const index = tasks.findIndex((t) => t.name === taskName);
-    if (index !== -1) {
-      tasks[index] = updatedTask;
-      await this.saveConfig({ ...config, tasks });
+    const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
+    const tasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const taskIndex = tasks.findIndex((task) => task.label === taskId);
+
+    if (taskIndex !== -1) {
+      tasks[taskIndex] = {
+        ...tasks[taskIndex],
+        ...newConfig,
+      } as CustomTaskDefinition;
+      await wsConfig.update(
+        "tasks",
+        tasks,
+        vscode.ConfigurationTarget.Workspace,
+      );
     }
-  }
-
-  public async deleteTask(taskName: string): Promise<void> {
-    const config = await this.getConfig();
-    const tasks = config.tasks || [];
-    const filteredTasks = tasks.filter((t) => t.name !== taskName);
-    await this.saveConfig({ ...config, tasks: filteredTasks });
-  }
-
-  public async runTask(task: TaskConfig): Promise<void> {
-    const terminal = vscode.window.createTerminal(`Task: ${task.name}`);
-    terminal.show();
-
-    // Use cwd if specified, otherwise use workspace root
-    const cwd = task.cwd || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (cwd) {
-      terminal.sendText(`cd "${cwd}"`);
-    }
-
-    terminal.sendText(task.command);
   }
 }

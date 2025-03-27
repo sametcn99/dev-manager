@@ -256,48 +256,23 @@ export class LicenseTreeItem extends vscode.TreeItem {
 export class TasksGroupTreeItem extends vscode.TreeItem {
   constructor() {
     super("Tasks", vscode.TreeItemCollapsibleState.Collapsed);
-    this.contextValue = "tasksGroup";
     this.iconPath = new vscode.ThemeIcon("tasklist");
+    this.contextValue = "tasksGroup";
+    this.tooltip = "VS Code Tasks";
   }
 }
 
 export class TaskTreeItem extends vscode.TreeItem {
-  constructor(public readonly taskConfig: TaskConfig) {
-    super(taskConfig.name, vscode.TreeItemCollapsibleState.None);
+  constructor(public readonly task: vscode.Task) {
+    super(task.name || "Unnamed Task", vscode.TreeItemCollapsibleState.None);
+    this.description = task.source;
+    this.tooltip = `Type: ${task.definition.type}\nSource: ${task.source}`;
+    this.iconPath = new vscode.ThemeIcon("play");
     this.contextValue = "task";
-    this.description = taskConfig.description || taskConfig.type;
-    this.tooltip = this.createTooltip(taskConfig);
-    this.iconPath = this.getIconForTaskType(taskConfig.type);
     this.command = {
       command: "dev-manager.runTask",
       title: "Run Task",
-      arguments: [taskConfig],
+      arguments: [{ taskId: task.name }],
     };
-  }
-
-  private createTooltip(task: TaskConfig): string {
-    let tooltip = `Task: ${task.name}\nType: ${task.type}\nCommand: ${task.command}`;
-    if (task.description) {
-      tooltip += `\nDescription: ${task.description}`;
-    }
-    if (task.cwd) {
-      tooltip += `\nWorking Directory: ${task.cwd}`;
-    }
-    return tooltip;
-  }
-
-  private getIconForTaskType(type: TaskType): vscode.ThemeIcon {
-    switch (type) {
-      case "build":
-        return new vscode.ThemeIcon("package");
-      case "test":
-        return new vscode.ThemeIcon("beaker");
-      case "serve":
-        return new vscode.ThemeIcon("play");
-      case "lint":
-        return new vscode.ThemeIcon("checklist");
-      default:
-        return new vscode.ThemeIcon("gear");
-    }
   }
 }
