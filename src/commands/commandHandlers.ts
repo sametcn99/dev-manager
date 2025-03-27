@@ -5,7 +5,6 @@ import { TaskService } from "../services/TaskService";
 import { ProjectCommandHandler } from "./ProjectCommandHandler";
 import { PackageManagerCommandHandler } from "./PackageManagerCommandHandler";
 import { DependencyCommandHandler } from "./DependencyCommandHandler";
-import { BulkOperationCommandHandler } from "./BulkOperationCommandHandler";
 import { ScriptCommandHandler } from "./ScriptCommandHandler";
 import { UpdateNotificationCommandHandler } from "./UpdateNotificationCommandHandler";
 import { PackageSizeCommandHandler } from "./PackageSizeCommandHandler";
@@ -16,7 +15,6 @@ export class CommandHandlers {
   private projectCommandHandler: ProjectCommandHandler;
   private packageManagerCommandHandler: PackageManagerCommandHandler;
   private dependencyCommandHandler: DependencyCommandHandler;
-  private bulkOperationCommandHandler: BulkOperationCommandHandler;
   private scriptCommandHandler: ScriptCommandHandler;
   private updateNotificationCommandHandler: UpdateNotificationCommandHandler;
   private licenseCommandHandler: LicenseCommandHandler;
@@ -34,10 +32,6 @@ export class CommandHandlers {
       packageManagerService,
     );
     this.dependencyCommandHandler = new DependencyCommandHandler(
-      projectTreeProvider,
-      packageManagerService,
-    );
-    this.bulkOperationCommandHandler = new BulkOperationCommandHandler(
       projectTreeProvider,
       packageManagerService,
     );
@@ -59,7 +53,6 @@ export class CommandHandlers {
     this.projectCommandHandler.registerCommands(context);
     this.packageManagerCommandHandler.registerCommands(context);
     this.dependencyCommandHandler.registerCommands(context);
-    this.bulkOperationCommandHandler.registerCommands(context);
     this.scriptCommandHandler.registerCommands(context);
     this.updateNotificationCommandHandler.registerCommands(context);
     this.licenseCommandHandler.registerCommands(context);
