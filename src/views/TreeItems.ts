@@ -119,7 +119,7 @@ export class DependencyTreeItem extends vscode.TreeItem {
       );
       this.description = `${this.depInfo.currentVersion || this.depInfo.versionRange} (${this.packageSizeService.formatSize(sizeInfo.size)})`;
       this.updateTooltip(sizeInfo);
-    } catch (error) {
+    } catch {
       // If size info can't be loaded, keep the original description
       this.description = this.depInfo.currentVersion
         ? `${this.depInfo.versionRange} (${this.depInfo.currentVersion})`

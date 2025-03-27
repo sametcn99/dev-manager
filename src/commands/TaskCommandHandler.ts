@@ -68,6 +68,20 @@ export class TaskCommandHandler {
       return;
     }
 
+    // Check if this is a workspace task (defined in tasks.json)
+    const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
+    const workspaceTasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const isWorkspaceTask = workspaceTasks.some(
+      (t) => t.label === task.definition.label,
+    );
+
+    if (!isWorkspaceTask) {
+      vscode.window.showErrorMessage(
+        "Only workspace tasks (defined in tasks.json) can be edited",
+      );
+      return;
+    }
+
     const projects = await this.projectTreeProvider.getAllProjects();
     const projectPaths = projects.map((p) => p.path);
     new TaskWebView(
@@ -83,6 +97,18 @@ export class TaskCommandHandler {
     if (!task.name || !task.scope || typeof task.scope === "number") {
       vscode.window.showErrorMessage(
         "Cannot delete this task: invalid task configuration",
+      );
+      return;
+    }
+
+    // Check if this is a workspace task (defined in tasks.json)
+    const wsConfig = vscode.workspace.getConfiguration("tasks", task.scope.uri);
+    const workspaceTasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const isWorkspaceTask = workspaceTasks.some((t) => t.label === task.name);
+
+    if (!isWorkspaceTask) {
+      vscode.window.showErrorMessage(
+        "Only workspace tasks (defined in tasks.json) can be deleted",
       );
       return;
     }

@@ -1,4 +1,3 @@
-import { execSync } from "node:child_process";
 import * as semver from "semver";
 import * as vscode from "vscode";
 
@@ -242,7 +241,7 @@ export class PackageManagerService {
     const nodeModulesUri = vscode.Uri.joinPath(projectUri, "node_modules");
     try {
       await vscode.workspace.fs.delete(nodeModulesUri, { recursive: true });
-    } catch (error) {
+    } catch {
       // Ignore if node_modules doesn't exist
     }
 
@@ -251,7 +250,7 @@ export class PackageManagerService {
       try {
         const lockFileUri = vscode.Uri.joinPath(projectUri, lockFile);
         await vscode.workspace.fs.delete(lockFileUri);
-      } catch (error) {
+      } catch {
         // Ignore if lock file doesn't exist
       }
     }
@@ -260,9 +259,7 @@ export class PackageManagerService {
   public async getLockFile(
     projectUri: vscode.Uri,
   ): Promise<string | undefined> {
-    for (const [lockFile, manager] of Object.entries(
-      PackageManagerService.LOCK_FILES,
-    )) {
+    for (const [lockFile] of Object.entries(PackageManagerService.LOCK_FILES)) {
       try {
         const lockFileUri = vscode.Uri.joinPath(projectUri, lockFile);
         await vscode.workspace.fs.stat(lockFileUri);
@@ -503,7 +500,6 @@ export class PackageManagerService {
   public async removeDependency(
     projectPath: string,
     packageName: string,
-    isDev: boolean,
   ): Promise<void> {
     const projectUri = vscode.Uri.file(projectPath);
     const packageManager = await this.detectPackageManager(projectUri);

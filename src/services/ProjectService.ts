@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { ProjectInfo } from "../types/ProjectInfo";
 import { PackageManagerService } from "./PackageManagerService";
 
 export class ProjectService {

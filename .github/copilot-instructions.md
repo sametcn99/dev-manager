@@ -19,3 +19,4 @@
 - Always write clean, maintainable, and well-documented code
 - Follow the project's existing coding style and conventions
 - Always write comments in english
+- Always check for eslint errors and warnings by eslint.config.mjs

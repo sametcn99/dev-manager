@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { CustomTaskDefinition, TaskService } from "../services/TaskService";
+import { TaskService } from "../services/TaskService";
 
 export class TaskWebView {
   public static readonly viewType = "taskEditor";
@@ -105,18 +105,13 @@ export class TaskWebView {
               `Task "${taskData.label}" updated successfully`,
             );
           } else {
-            // Create new task
-            const task = await this.taskService.createTask(
-              taskData,
-              this.workspaceFolder!,
-            );
+            await this.taskService.createTask(taskData, this.workspaceFolder!);
             vscode.window.showInformationMessage(
               `Task "${taskData.label}" created successfully`,
             );
           }
         },
       );
-
       this._panel.dispose();
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to save task: ${error}`);

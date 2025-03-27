@@ -321,7 +321,6 @@ export class DependencyCommandHandler {
   private async handleRemoveDependency(element: DependencyTreeItem) {
     const projectPath = element.projectPath;
     const packageName = element.label as string;
-    const isDev = element.contextValue === "devDependency";
 
     const answer = await vscode.window.showWarningMessage(
       `Are you sure you want to remove ${packageName}?`,
@@ -338,7 +337,6 @@ export class DependencyCommandHandler {
       await this.packageManagerService.removeDependency(
         projectPath,
         packageName,
-        isDev,
       );
       this.projectTreeProvider.refresh();
     } catch (error) {

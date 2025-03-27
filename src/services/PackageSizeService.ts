@@ -104,7 +104,7 @@ export class PackageSizeService {
           totalFiles++;
         }
       }
-    } catch (error) {
+    } catch {
       // Directory or file might not exist, return current totals
       return { size: totalSize, files: totalFiles };
     }

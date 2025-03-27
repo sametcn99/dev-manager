@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { ProjectService } from "../services/ProjectService";
 import { TaskService } from "../services/TaskService";
-import { ProjectInfo } from "../types/ProjectInfo";
 import {
   DependencyGroupTreeItem,
   DependencyTreeItem,
