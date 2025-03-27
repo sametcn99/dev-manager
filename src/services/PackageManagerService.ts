@@ -32,20 +32,30 @@ export class PackageManagerService {
   public async detectPackageManager(
     projectUri: vscode.Uri,
   ): Promise<PackageManager> {
-    // 1. First check lock files as they are most definitive
+    // Store detection results with priorities for later decision
+    const detectionResults: Array<{
+      manager: PackageManager;
+      priority: number;
+    }> = [];
+
+    // 1. First check lock files as they are most definitive (highest priority = 3)
     for (const [lockFile, manager] of Object.entries(
       PackageManagerService.LOCK_FILES,
     )) {
       try {
         const lockFileUri = vscode.Uri.joinPath(projectUri, lockFile);
-        await vscode.workspace.fs.stat(lockFileUri);
-        return manager;
+        const stat = await vscode.workspace.fs.stat(lockFileUri);
+
+        // Only consider if the file actually has content (size > 0)
+        if (stat.size > 0) {
+          detectionResults.push({ manager, priority: 3 });
+        }
       } catch {
-        continue;
+        // File doesn't exist, continue to next detection method
       }
     }
 
-    // 2. Check package.json for packageManager field
+    // 2. Check package.json for packageManager field (priority = 2)
     try {
       const packageJsonUri = vscode.Uri.joinPath(projectUri, "package.json");
       const packageJsonContent =
@@ -60,51 +70,104 @@ export class PackageManagerService {
           pmName === "pnpm" ||
           pmName === "bun"
         ) {
-          return pmName as PackageManager;
+          detectionResults.push({
+            manager: pmName as PackageManager,
+            priority: 2,
+          });
         }
       }
-    } catch {
-      // Ignore if package.json doesn't exist or can't be parsed
+
+      // Also check for specific package manager sections in package.json
+      if (packageJson.yarn) {
+        detectionResults.push({ manager: "yarn", priority: 1 });
+      }
+      if (packageJson.pnpm) {
+        detectionResults.push({ manager: "pnpm", priority: 1 });
+      }
+    } catch (error) {
+      // Log error but continue detection
+      console.warn(`Error reading package.json: ${error}`);
     }
 
-    // 3. Check for package manager specific config files
+    // 3. Check for package manager specific config files (priority = 1)
     for (const [configFile, manager] of Object.entries(
       PackageManagerService.CONFIG_FILES,
     )) {
       try {
         const configFileUri = vscode.Uri.joinPath(projectUri, configFile);
         await vscode.workspace.fs.stat(configFileUri);
-        return manager;
+        detectionResults.push({ manager, priority: 1 });
       } catch {
-        continue;
+        // File doesn't exist, continue to next detection method
       }
     }
 
-    // 4. As a last resort, check if any package manager is available in PATH
+    // 4. Check if node_modules directory has package manager specific modules (priority = 1)
     try {
-      const { execSync } = require("child_process");
-      // Try pnpm first as it's least likely to be installed by default
-      execSync("pnpm --version", { stdio: "ignore" });
-      return "pnpm";
-    } catch {
+      const nodeModulesUri = vscode.Uri.joinPath(projectUri, "node_modules");
+
+      // Check for .yarn directory which indicates yarn usage
       try {
-        execSync("yarn --version", { stdio: "ignore" });
-        return "yarn";
+        const yarnDirUri = vscode.Uri.joinPath(nodeModulesUri, ".yarn");
+        await vscode.workspace.fs.stat(yarnDirUri);
+        detectionResults.push({ manager: "yarn", priority: 1 });
       } catch {
-        try {
-          execSync("bun --version", { stdio: "ignore" });
-          return "bun";
-        } catch {
-          // Default to npm only if it's actually available
-          try {
-            execSync("npm --version", { stdio: "ignore" });
-            return "npm";
-          } catch {
-            // If nothing is found, still default to npm as it's most common
-            return "npm";
-          }
-        }
+        // .yarn directory doesn't exist
       }
+
+      // Check for .pnpm directory which indicates pnpm usage
+      try {
+        const pnpmDirUri = vscode.Uri.joinPath(nodeModulesUri, ".pnpm");
+        await vscode.workspace.fs.stat(pnpmDirUri);
+        detectionResults.push({ manager: "pnpm", priority: 1 });
+      } catch {
+        // .pnpm directory doesn't exist
+      }
+    } catch {
+      // node_modules directory doesn't exist
+    }
+
+    // If we have detection results, sort by priority and return the highest priority manager
+    if (detectionResults.length > 0) {
+      detectionResults.sort((a, b) => b.priority - a.priority);
+      return detectionResults[0].manager;
+    }
+
+    // 5. As a last resort, check if any package manager is available in PATH (lowest priority)
+    // We'll try these in a specific order of preference: pnpm, yarn, bun, npm
+    try {
+      // Use VS Code API's process execution instead of direct child_process
+      const processExecution = async (command: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+          const cp = require("child_process");
+          cp.exec(command, { timeout: 2000 }, (error: Error) => {
+            resolve(!error);
+          });
+        });
+      };
+
+      // Try each package manager in order
+      if (await processExecution("pnpm --version")) {
+        return "pnpm";
+      }
+
+      if (await processExecution("yarn --version")) {
+        return "yarn";
+      }
+
+      if (await processExecution("bun --version")) {
+        return "bun";
+      }
+
+      if (await processExecution("npm --version")) {
+        return "npm";
+      }
+
+      // If all else fails, default to npm as it's most commonly available
+      return "npm";
+    } catch (error) {
+      console.warn(`Error checking package managers in PATH: ${error}`);
+      return "npm"; // Default to npm as fallback
     }
   }
 

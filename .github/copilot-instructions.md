@@ -13,3 +13,9 @@
 - Maintain separation of concerns between services, providers, and command handlers
 - Follow TypeScript best practices with proper typing and interfaces
 - Ensure backward compatibility with existing project structure and conventions
+
+## Remember
+
+- Always write clean, maintainable, and well-documented code
+- Follow the project's existing coding style and conventions
+- Always write comments in english
