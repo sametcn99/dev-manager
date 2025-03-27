@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
-import * as semver from "semver";
 import { execSync } from "node:child_process";
+import * as semver from "semver";
+import * as vscode from "vscode";
 
 export class PackageManagerService {
   private static readonly LOCK_FILES: Record<string, PackageManager> = {

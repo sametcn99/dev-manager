@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
-import { ProjectTreeItem } from "../views/TreeItems";
 
 export class ScriptCommandHandler {
   constructor(private projectTreeProvider: ProjectTreeProvider) {}

@@ -2,14 +2,14 @@ import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { PackageManagerService } from "../services/PackageManagerService";
 import { TaskService } from "../services/TaskService";
-import { ProjectCommandHandler } from "./ProjectCommandHandler";
-import { PackageManagerCommandHandler } from "./PackageManagerCommandHandler";
 import { DependencyCommandHandler } from "./DependencyCommandHandler";
-import { ScriptCommandHandler } from "./ScriptCommandHandler";
-import { UpdateNotificationCommandHandler } from "./UpdateNotificationCommandHandler";
-import { PackageSizeCommandHandler } from "./PackageSizeCommandHandler";
 import { LicenseCommandHandler } from "./LicenseCommandHandler";
+import { PackageManagerCommandHandler } from "./PackageManagerCommandHandler";
+import { PackageSizeCommandHandler } from "./PackageSizeCommandHandler";
+import { ProjectCommandHandler } from "./ProjectCommandHandler";
+import { ScriptCommandHandler } from "./ScriptCommandHandler";
 import { TaskCommandHandler } from "./TaskCommandHandler";
+import { UpdateNotificationCommandHandler } from "./UpdateNotificationCommandHandler";
 
 export class CommandHandlers {
   private projectCommandHandler: ProjectCommandHandler;

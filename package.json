@@ -268,6 +268,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/semver": "^7.5.8",
@@ -278,6 +279,7 @@
     "@vscode/test-electron": "^2.4.1",
     "esbuild": "^0.25.0",
     "eslint": "^9.21.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "npm-run-all": "^4.1.5",

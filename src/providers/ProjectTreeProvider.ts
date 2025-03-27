@@ -1,20 +1,20 @@
 import * as vscode from "vscode";
 import { ProjectService } from "../services/ProjectService";
+import { TaskService } from "../services/TaskService";
+import { ProjectInfo } from "../types/ProjectInfo";
 import {
-  ProjectTreeItem,
+  DependencyGroupTreeItem,
   DependencyTreeItem,
+  LicenseTreeItem,
   PackageManagerDropdownItem,
   PackageManagerOptionItem,
-  DependencyGroupTreeItem,
+  ProjectTreeItem,
   ScriptGroupTreeItem,
   ScriptTreeItem,
-  UpdateSettingsItem,
-  LicenseTreeItem,
   TasksGroupTreeItem,
   TaskTreeItem,
+  UpdateSettingsItem,
 } from "../views/TreeItems";
-import { ProjectInfo } from "../types/ProjectInfo";
-import { TaskService } from "../services/TaskService";
 
 export class ProjectTreeProvider
   implements vscode.TreeDataProvider<vscode.TreeItem>

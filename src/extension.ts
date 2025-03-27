@@ -1,14 +1,17 @@
 import * as vscode from "vscode";
+import { CommandHandlers } from "./commands/commandHandlers";
 import { ProjectTreeProvider } from "./providers/ProjectTreeProvider";
 import { PackageManagerService } from "./services/PackageManagerService";
 import { TaskService } from "./services/TaskService";
-import { CommandHandlers } from "./commands/commandHandlers";
-import { TaskCommandHandler } from "./commands/TaskCommandHandler";
 
 export function activate(context: vscode.ExtensionContext) {
   const packageManagerService = new PackageManagerService();
   const taskService = new TaskService();
   const projectTreeProvider = new ProjectTreeProvider(taskService);
+
+  // Track task execution to prevent unnecessary refreshes
+  let isTaskExecuting = false;
+
   const commandHandlers = new CommandHandlers(
     projectTreeProvider,
     packageManagerService,
@@ -16,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     context,
   );
 
-  const treeView = vscode.window.createTreeView("devManagerProjects", {
+  vscode.window.createTreeView("devManagerProjects", {
     treeDataProvider: projectTreeProvider,
   });
 
@@ -41,10 +44,27 @@ export function activate(context: vscode.ExtensionContext) {
     false,
   );
 
-  // Refresh when tasks.json changes
-  tasksWatcher.onDidChange(() => projectTreeProvider.refresh());
+  // Refresh when tasks.json changes, but only if no task is currently executing
+  tasksWatcher.onDidChange(() => {
+    if (!isTaskExecuting) {
+      projectTreeProvider.refresh();
+    }
+  });
   tasksWatcher.onDidCreate(() => projectTreeProvider.refresh());
   tasksWatcher.onDidDelete(() => projectTreeProvider.refresh());
+
+  // Listen for task start/end events
+  context.subscriptions.push(
+    vscode.tasks.onDidStartTask(() => {
+      isTaskExecuting = true;
+    }),
+    vscode.tasks.onDidEndTask(() => {
+      // Use setTimeout to ensure any file changes have settled
+      setTimeout(() => {
+        isTaskExecuting = false;
+      }, 300);
+    }),
+  );
 
   // Register the watchers to be disposed when extension is deactivated
   context.subscriptions.push(watcher, tasksWatcher);

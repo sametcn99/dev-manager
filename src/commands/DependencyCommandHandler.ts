@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { PackageManagerService } from "../services/PackageManagerService";
 import {
-  ProjectTreeItem,
-  DependencyTreeItem,
   DependencyGroupTreeItem,
+  DependencyTreeItem,
+  ProjectTreeItem,
 } from "../views/TreeItems";
 
 export class DependencyCommandHandler {

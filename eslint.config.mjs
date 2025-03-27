@@ -6,9 +6,12 @@ export default [
     files: ["**/*.ts"],
   },
   {
-    plugins: {
-      "@typescript-eslint": typescriptEslint,
-    },
+    plugins: [
+      {
+        "@typescript-eslint": typescriptEslint,
+      },
+      "unused-imports",
+    ],
 
     languageOptions: {
       parser: tsParser,
@@ -29,6 +32,11 @@ export default [
       eqeqeq: "warn",
       "no-throw-literal": "warn",
       semi: "warn",
+      "no-unused-vars": [
+        "error",
+        { vars: "all", args: "after-used", ignoreRestSiblings: false },
+      ],
+      "unused-imports/no-unused-imports": "error",
     },
   },
 ];

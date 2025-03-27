@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
+import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { TaskService } from "../services/TaskService";
 import { TaskWebView } from "../views/TaskWebView";
-import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 
 export class TaskCommandHandler {
   private taskService: TaskService;
