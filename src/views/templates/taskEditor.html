@@ -18,56 +18,63 @@
         font-size: 13px;
       }
 
-      .settings-container {
-        display: grid;
-        grid-template-columns: 200px 1fr;
+      .container {
         height: 100vh;
-        overflow: hidden;
-      }
-
-      /* Settings Sidebar */
-      .settings-sidebar {
-        border-right: 1px solid var(--vscode-sideBar-border);
-        background-color: var(--vscode-sideBar-background);
-        overflow-y: auto;
-      }
-
-      .settings-sidebar-header {
-        padding: 8px 20px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: var(--vscode-sideBarSectionHeader-foreground);
-        background-color: var(--vscode-sideBarSectionHeader-background);
-        border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
-        letter-spacing: 0.1em;
-      }
-
-      .settings-nav-item {
-        padding: 8px 20px;
-        cursor: pointer;
         display: flex;
-        align-items: center;
-        color: var(--vscode-sideBar-foreground);
-        font-size: 13px;
+        flex-direction: column;
       }
 
-      .settings-nav-item.active {
-        background-color: var(--vscode-list-activeSelectionBackground);
-        color: var(--vscode-list-activeSelectionForeground);
+      /* Tab navigation */
+      .tab-nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--vscode-editor-background);
+        border-bottom: 1px solid var(--vscode-panel-border);
+        display: flex;
+        overflow-x: auto;
+      }
+
+      .tab-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        color: var(--vscode-foreground);
+        opacity: 0.8;
+        font-size: 13px;
+        white-space: nowrap;
+        position: relative;
+      }
+
+      .tab-item.active {
+        opacity: 1;
         font-weight: 600;
       }
 
-      .settings-nav-item:hover:not(.active) {
+      .tab-item.active::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background-color: var(--vscode-focusBorder);
+      }
+
+      .tab-item:hover:not(.active) {
+        opacity: 1;
         background-color: var(--vscode-list-hoverBackground);
       }
 
-      /* Settings Content */
-      .settings-content {
-        padding: 20px 32px;
-        height: 100%;
+      /* Content area */
+      .content-container {
+        flex: 1;
         overflow-y: auto;
-        box-sizing: border-box;
+        padding: 24px 32px;
+      }
+
+      .settings-section {
+        margin-bottom: 40px;
+        scroll-margin-top: 50px; /* Ensures that when scrolled to, it appears below the tabs */
       }
 
       .settings-content-header {
@@ -76,10 +83,6 @@
         margin-bottom: 25px;
         color: var(--vscode-foreground);
         line-height: 1.2;
-      }
-
-      .settings-section {
-        margin-bottom: 32px;
       }
 
       .settings-section-title {
@@ -178,15 +181,9 @@
         align-items: center;
       }
 
-      .hidden {
-        display: none;
-      }
-
       .action-buttons {
-        position: sticky;
-        bottom: 0;
         background-color: var(--vscode-editor-background);
-        margin-top: 32px;
+        margin-top: 24px;
         padding: 16px 0;
         display: flex;
         justify-content: flex-end;
@@ -214,26 +211,25 @@
     </style>
   </head>
   <body>
-    <div class="settings-container">
-      <!-- Settings Sidebar -->
-      <div class="settings-sidebar">
-        <div class="settings-sidebar-header">Task Configuration</div>
-        <div class="settings-nav-item active" data-section="basic">Basic</div>
-        <div class="settings-nav-item" data-section="execution">Execution</div>
-        <div class="settings-nav-item" data-section="presentation">
+    <div class="container">
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <div class="tab-item active" data-section="basic-section">Basic</div>
+        <div class="tab-item" data-section="execution-section">Execution</div>
+        <div class="tab-item" data-section="presentation-section">
           Presentation
         </div>
-        <div class="settings-nav-item" data-section="dependencies">
+        <div class="tab-item" data-section="dependencies-section">
           Dependencies
         </div>
-        <div class="settings-nav-item" data-section="advanced">Advanced</div>
+        <div class="tab-item" data-section="advanced-section">Advanced</div>
       </div>
 
-      <!-- Settings Content -->
-      <div class="settings-content">
+      <!-- Content Container -->
+      <div class="content-container">
         <form id="taskForm">
           <!-- Basic Settings Section -->
-          <div class="settings-section" id="basic-section">
+          <div id="basic-section" class="settings-section">
             <div class="settings-content-header">Basic Configuration</div>
 
             <div class="settings-section-description">
@@ -298,7 +294,7 @@
           </div>
 
           <!-- Execution Settings Section -->
-          <div class="settings-section hidden" id="execution-section">
+          <div id="execution-section" class="settings-section">
             <div class="settings-content-header">Execution Options</div>
 
             <div class="settings-section-title">Shell Options</div>
@@ -403,7 +399,7 @@
           </div>
 
           <!-- Presentation Settings Section -->
-          <div class="settings-section hidden" id="presentation-section">
+          <div id="presentation-section" class="settings-section">
             <div class="settings-content-header">Presentation Options</div>
             <div class="settings-section-description">
               Configure how task output is presented in the terminal.
@@ -502,7 +498,7 @@
           </div>
 
           <!-- Dependencies Settings Section -->
-          <div class="settings-section hidden" id="dependencies-section">
+          <div id="dependencies-section" class="settings-section">
             <div class="settings-content-header">Task Dependencies</div>
             <div class="settings-section-description">
               Configure which tasks need to be run before this task.
@@ -535,7 +531,7 @@
           </div>
 
           <!-- Advanced Settings Section -->
-          <div class="settings-section hidden" id="advanced-section">
+          <div id="advanced-section" class="settings-section">
             <div class="settings-content-header">Advanced Options</div>
             <div class="settings-section-description">
               Configure additional advanced task options.
@@ -619,23 +615,47 @@
       let envVars = new Map();
       let dependencies = [];
 
-      // Show/hide sections based on sidebar navigation
-      document.querySelectorAll(".settings-nav-item").forEach((item) => {
-        item.addEventListener("click", () => {
-          // Update active state in sidebar
-          document
-            .querySelectorAll(".settings-nav-item")
-            .forEach((el) => el.classList.remove("active"));
-          item.classList.add("active");
+      // Get elements
+      const tabItems = document.querySelectorAll(".tab-item");
+      const sections = document.querySelectorAll(".settings-section");
+      const contentContainer = document.querySelector(".content-container");
 
-          // Show the corresponding section
-          const sectionName = item.getAttribute("data-section");
-          document.querySelectorAll(".settings-section").forEach((section) => {
-            section.classList.add("hidden");
+      // Tab click handler - smooth scroll to section
+      tabItems.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const sectionId = tab.getAttribute("data-section");
+          const section = document.getElementById(sectionId);
+
+          // Scroll to section
+          contentContainer.scrollTo({
+            top: section.offsetTop - 48, // Adjust for tab height
+            behavior: "smooth",
           });
-          document
-            .getElementById(`${sectionName}-section`)
-            .classList.remove("hidden");
+        });
+      });
+
+      // Scroll spy functionality
+      contentContainer.addEventListener("scroll", () => {
+        const scrollPosition = contentContainer.scrollTop;
+
+        // Find the current visible section
+        let currentSectionId = sections[0].id;
+
+        sections.forEach((section) => {
+          const sectionTop = section.offsetTop;
+
+          if (scrollPosition >= sectionTop - 100) {
+            currentSectionId = section.id;
+          }
+        });
+
+        // Update active tab
+        tabItems.forEach((tab) => {
+          if (tab.getAttribute("data-section") === currentSectionId) {
+            tab.classList.add("active");
+          } else {
+            tab.classList.remove("active");
+          }
         });
       });
 
