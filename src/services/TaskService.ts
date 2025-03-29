@@ -64,14 +64,27 @@ export class TaskService {
 
   async createTask(
     taskConfig: vscode.TaskDefinition,
-    scope: vscode.WorkspaceFolder | vscode.TaskScope,
+    workspaceFolder?: vscode.WorkspaceFolder,
   ): Promise<vscode.Task> {
-    if (typeof scope === "number") {
-      throw new Error("Task scope must be a workspace folder");
+    // Get workspace folder if not provided
+    if (!workspaceFolder) {
+      const folders = vscode.workspace.workspaceFolders;
+      if (!folders || folders.length === 0) {
+        throw new Error("No workspace folder found for task creation");
+      }
+      workspaceFolder = folders[0];
+    }
+
+    // Ensure we have a valid URI
+    if (!workspaceFolder.uri) {
+      throw new Error("Invalid workspace folder: missing URI");
     }
 
     // First check if task with same label already exists
-    const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
+    const wsConfig = vscode.workspace.getConfiguration(
+      "tasks",
+      workspaceFolder.uri,
+    );
     const existingTasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
     if (existingTasks.some((task) => task.label === taskConfig.label)) {
       throw new Error(`Task with label "${taskConfig.label}" already exists`);
@@ -79,7 +92,7 @@ export class TaskService {
 
     const newTask = new vscode.Task(
       taskConfig,
-      scope,
+      workspaceFolder,
       taskConfig.label || "New Task",
       taskConfig.type,
     );
@@ -147,13 +160,20 @@ export class TaskService {
       };
     }
 
-    // Add the task to workspace folder configuration
-    existingTasks.push(taskConfig);
-    await wsConfig.update(
-      "tasks",
-      existingTasks,
-      vscode.ConfigurationTarget.WorkspaceFolder,
-    );
+    try {
+      // Add the task to workspace folder configuration
+      existingTasks.push(taskConfig);
+      await wsConfig.update(
+        "tasks",
+        existingTasks,
+        vscode.ConfigurationTarget.WorkspaceFolder,
+      );
+    } catch (error) {
+      console.error("Failed to save task configuration:", error);
+      throw new Error(
+        `Could not save task configuration: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
 
     return newTask;
   }

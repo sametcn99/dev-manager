@@ -6,12 +6,13 @@ export class TaskWebView {
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
   private _disposables: vscode.Disposable[] = [];
+  private workspaceFolder?: vscode.WorkspaceFolder =
+    vscode.workspace.getWorkspaceFolder(vscode.Uri.file(process.cwd()));
 
   constructor(
     extensionUri: vscode.Uri,
     private taskService: TaskService,
     private initialTask?: vscode.TaskDefinition,
-    private workspaceFolder?: vscode.WorkspaceFolder,
     private projectPaths?: string[],
   ) {
     this._extensionUri = extensionUri;
@@ -79,10 +80,16 @@ export class TaskWebView {
 
   private async _handleSaveTask(taskData: vscode.TaskDefinition) {
     try {
+      // Ensure we have a valid workspace folder
       if (!this.workspaceFolder) {
+        // Try to select a workspace folder
         this.workspaceFolder = await this._selectWorkspaceFolder();
+
+        // If still no workspace folder, we can't continue
         if (!this.workspaceFolder) {
-          vscode.window.showErrorMessage("No workspace folder selected");
+          vscode.window.showErrorMessage(
+            "No workspace folder selected. Task cannot be saved without a valid workspace folder.",
+          );
           return;
         }
       }
@@ -105,7 +112,8 @@ export class TaskWebView {
               `Task "${taskData.label}" updated successfully`,
             );
           } else {
-            await this.taskService.createTask(taskData, this.workspaceFolder!);
+            // Create new task with workspace folder
+            await this.taskService.createTask(taskData, this.workspaceFolder);
             vscode.window.showInformationMessage(
               `Task "${taskData.label}" created successfully`,
             );

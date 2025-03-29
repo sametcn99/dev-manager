@@ -33,7 +33,7 @@ export class TaskCommandHandler {
     );
   }
 
-  private async handleCreateTask(workspaceFolder?: vscode.WorkspaceFolder) {
+  private async handleCreateTask() {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -47,7 +47,6 @@ export class TaskCommandHandler {
           this.context.extensionUri,
           this.taskService,
           undefined,
-          workspaceFolder,
           projectPaths,
         );
       },
