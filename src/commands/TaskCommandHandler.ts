@@ -70,7 +70,7 @@ export class TaskCommandHandler {
 
     // Check if this is a workspace task (defined in tasks.json)
     const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
-    const workspaceTasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const workspaceTasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
     const isWorkspaceTask = workspaceTasks.some(
       (t) => t.label === task.definition.label,
     );
@@ -103,7 +103,7 @@ export class TaskCommandHandler {
 
     // Check if this is a workspace task (defined in tasks.json)
     const wsConfig = vscode.workspace.getConfiguration("tasks", task.scope.uri);
-    const workspaceTasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const workspaceTasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
     const isWorkspaceTask = workspaceTasks.some((t) => t.label === task.name);
 
     if (!isWorkspaceTask) {

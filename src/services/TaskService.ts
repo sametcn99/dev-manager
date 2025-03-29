@@ -15,7 +15,7 @@ export class TaskService {
         const taskDefinitions = config.get(
           "tasks",
           [],
-        ) as CustomTaskDefinition[];
+        ) as vscode.TaskDefinition[];
 
         for (const taskDef of taskDefinitions) {
           try {
@@ -63,7 +63,7 @@ export class TaskService {
   }
 
   async createTask(
-    taskConfig: CustomTaskDefinition,
+    taskConfig: vscode.TaskDefinition,
     scope: vscode.WorkspaceFolder | vscode.TaskScope,
   ): Promise<vscode.Task> {
     if (typeof scope === "number") {
@@ -72,7 +72,7 @@ export class TaskService {
 
     // First check if task with same label already exists
     const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
-    const existingTasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const existingTasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
     if (existingTasks.some((task) => task.label === taskConfig.label)) {
       throw new Error(`Task with label "${taskConfig.label}" already exists`);
     }
@@ -193,7 +193,7 @@ export class TaskService {
     scope: vscode.WorkspaceFolder,
   ): Promise<void> {
     const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
-    const tasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const tasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
     const updatedTasks = tasks.filter((task) => task.label !== taskId);
     await wsConfig.update(
       "tasks",
@@ -204,18 +204,18 @@ export class TaskService {
 
   async editTask(
     taskId: string,
-    newConfig: CustomTaskDefinition,
+    newConfig: vscode.TaskDefinition,
     scope: vscode.WorkspaceFolder,
   ): Promise<void> {
     const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
-    const tasks = wsConfig.get("tasks", []) as CustomTaskDefinition[];
+    const tasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
     const taskIndex = tasks.findIndex((task) => task.label === taskId);
 
     if (taskIndex !== -1) {
       tasks[taskIndex] = {
         ...tasks[taskIndex],
         ...newConfig,
-      } as CustomTaskDefinition;
+      } as vscode.TaskDefinition;
       await wsConfig.update(
         "tasks",
         tasks,
