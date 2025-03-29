@@ -19,10 +19,6 @@ export class TaskCommandHandler {
         this.handleCreateTask.bind(this),
       ),
       vscode.commands.registerCommand(
-        "dev-manager.editTask",
-        this.handleEditTask.bind(this),
-      ),
-      vscode.commands.registerCommand(
         "dev-manager.deleteTask",
         this.handleDeleteTask.bind(this),
       ),
@@ -46,21 +42,10 @@ export class TaskCommandHandler {
         new TaskWebView(
           this.context.extensionUri,
           this.taskService,
-          undefined,
           projectPaths,
         );
       },
     );
-  }
-
-  private async handleEditTask(task: vscode.Task) {
-    // Ensure task is properly defined
-    if (!task) {
-      vscode.window.showErrorMessage("Cannot edit task: No task provided");
-      return;
-    }
-
-    new TaskWebView(this.context.extensionUri, this.taskService, task);
   }
 
   private async handleDeleteTask(task: vscode.TaskDefinition) {

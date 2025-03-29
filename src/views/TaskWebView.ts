@@ -12,7 +12,6 @@ export class TaskWebView {
   constructor(
     extensionUri: vscode.Uri,
     private taskService: TaskService,
-    private initialTask?: vscode.Task,
     private projectPaths?: string[],
   ) {
     this._extensionUri = extensionUri;
@@ -40,10 +39,10 @@ export class TaskWebView {
       async () => {
         await this._initializeWebview();
 
-        // Initialize the form with existing task data if provided
+        // Initialize the form with project paths
         this._panel.webview.postMessage({
           type: "init",
-          task: initialTask,
+          task: null,
           projectPaths: this.projectPaths || [],
         });
       },
@@ -97,27 +96,15 @@ export class TaskWebView {
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: this.initialTask ? "Updating task..." : "Creating task...",
+          title: "Creating task...",
           cancellable: false,
         },
         async () => {
-          if (this.initialTask) {
-            // Edit existing task
-            await this.taskService.editTask(
-              this.initialTask.definition.label!,
-              taskData,
-              this.workspaceFolder!,
-            );
-            vscode.window.showInformationMessage(
-              `Task "${taskData.label}" updated successfully`,
-            );
-          } else {
-            // Create new task with workspace folder
-            await this.taskService.createTask(taskData, this.workspaceFolder);
-            vscode.window.showInformationMessage(
-              `Task "${taskData.label}" created successfully`,
-            );
-          }
+          // Create new task with workspace folder
+          await this.taskService.createTask(taskData, this.workspaceFolder);
+          vscode.window.showInformationMessage(
+            `Task "${taskData.label}" created successfully`,
+          );
         },
       );
       this._panel.dispose();

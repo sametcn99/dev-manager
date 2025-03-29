@@ -134,11 +134,6 @@
         "icon": "$(add)"
       },
       {
-        "command": "dev-manager.editTask",
-        "title": "Edit Task",
-        "icon": "$(edit)"
-      },
-      {
         "command": "dev-manager.deleteTask",
         "title": "Delete Task",
         "icon": "$(trash)"
@@ -231,11 +226,6 @@
         {
           "command": "dev-manager.createTask",
           "when": "view == devManagerProjects && viewItem == tasksGroup",
-          "group": "inline"
-        },
-        {
-          "command": "dev-manager.editTask",
-          "when": "view == devManagerProjects && viewItem == task",
           "group": "inline"
         },
         {
