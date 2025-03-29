@@ -12,7 +12,7 @@ export class TaskWebView {
   constructor(
     extensionUri: vscode.Uri,
     private taskService: TaskService,
-    private initialTask?: vscode.TaskDefinition,
+    private initialTask?: vscode.Task,
     private projectPaths?: string[],
   ) {
     this._extensionUri = extensionUri;
@@ -104,7 +104,7 @@ export class TaskWebView {
           if (this.initialTask) {
             // Edit existing task
             await this.taskService.editTask(
-              this.initialTask.label!,
+              this.initialTask.definition.label!,
               taskData,
               this.workspaceFolder!,
             );

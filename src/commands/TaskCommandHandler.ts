@@ -60,11 +60,7 @@ export class TaskCommandHandler {
       return;
     }
 
-    new TaskWebView(
-      this.context.extensionUri,
-      this.taskService,
-      task.definition,
-    );
+    new TaskWebView(this.context.extensionUri, this.taskService, task);
   }
 
   private async handleDeleteTask(task: vscode.TaskDefinition) {
