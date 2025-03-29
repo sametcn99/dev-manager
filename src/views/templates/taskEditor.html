@@ -9,220 +9,312 @@
         font-family: var(--vscode-font-family);
         color: var(--vscode-foreground);
         background-color: var(--vscode-editor-background);
-        padding: 20px;
         margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow: hidden;
       }
-      .form-group {
+
+      .settings-container {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Settings Sidebar */
+      .settings-sidebar {
+        width: 200px;
+        height: 100%;
+        border-right: 1px solid var(--vscode-panel-border);
+        overflow-y: auto;
+        background-color: var(--vscode-sideBar-background);
+      }
+
+      .settings-sidebar-header {
+        padding: 10px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: var(--vscode-sideBarSectionHeader-foreground);
+        background-color: var(--vscode-sideBarSectionHeader-background);
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
+
+      .settings-nav-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--vscode-sideBar-foreground);
+        display: flex;
+        align-items: center;
+      }
+
+      .settings-nav-item.active {
+        background-color: var(--vscode-list-activeSelectionBackground);
+        color: var(--vscode-list-activeSelectionForeground);
+      }
+
+      .settings-nav-item:hover:not(.active) {
+        background-color: var(--vscode-list-hoverBackground);
+      }
+
+      /* Settings Content */
+      .settings-content {
+        flex: 1;
+        padding: 15px 20px;
+        height: 100%;
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+
+      .settings-content-header {
+        font-size: 24px;
+        font-weight: 400;
+        margin-bottom: 20px;
+        color: var(--vscode-foreground);
+      }
+
+      .settings-section {
+        margin-bottom: 30px;
+      }
+
+      .settings-section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--vscode-foreground);
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
+
+      .settings-section-description {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
         margin-bottom: 15px;
       }
-      .form-section {
-        border: 1px solid var(--vscode-panel-border);
-        padding: 15px;
-        margin-bottom: 15px;
-        border-radius: 4px;
+
+      .setting-item {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
       }
-      .form-section h3 {
-        margin-top: 0;
-        color: var(--vscode-editor-foreground);
-      }
-      label {
-        display: block;
+
+      .setting-item-label {
+        font-size: 13px;
         margin-bottom: 5px;
-        color: var(--vscode-input-foreground);
+        color: var(--vscode-foreground);
       }
+
+      .setting-item-description {
+        font-size: 12px;
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 8px;
+      }
+
       input,
       select,
       textarea {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid var(--vscode-input-border);
-        background: var(--vscode-input-background);
+        background-color: var(--vscode-input-background);
         color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        padding: 4px 8px;
         border-radius: 2px;
+        font-family: var(--vscode-font-family);
+        font-size: 13px;
       }
-      .button-group {
-        margin-top: 20px;
-        display: flex;
-        gap: 10px;
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 1px solid var(--vscode-focusBorder);
       }
-      button {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 2px;
-        cursor: pointer;
-      }
-      .primary {
-        background: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
-      }
-      .secondary {
-        background: var(--vscode-button-secondaryBackground);
-        color: var(--vscode-button-secondaryForeground);
-      }
-      .input-group {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
-      .input-group input {
-        flex: 1;
-      }
-      .input-group button {
-        flex-shrink: 0;
-      }
-      .checkbox-group {
+
+      .checkbox-wrapper {
         display: flex;
         align-items: center;
-        gap: 8px;
       }
-      .checkbox-group input[type="checkbox"] {
-        width: auto;
+
+      .checkbox-wrapper input[type="checkbox"] {
+        margin-right: 8px;
       }
-      .env-pair {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 8px;
-      }
-      .env-pair input {
-        flex: 1;
-      }
-      .env-pair button {
-        flex-shrink: 0;
-      }
-      .tab-container {
-        margin-bottom: 20px;
-      }
-      .tab-buttons {
-        display: flex;
-        gap: 5px;
-        margin-bottom: 15px;
-      }
-      .tab-button {
-        padding: 8px 15px;
-        cursor: pointer;
-        background: var(--vscode-button-secondaryBackground);
-        color: var(--vscode-button-secondaryForeground);
-        border: none;
-        border-radius: 3px;
-      }
-      .tab-button.active {
-        background: var(--vscode-button-background);
+
+      button {
+        background-color: var(--vscode-button-background);
         color: var(--vscode-button-foreground);
+        border: none;
+        padding: 5px 10px;
+        font-size: 13px;
+        cursor: pointer;
+        border-radius: 2px;
       }
-      .tab-content {
+
+      button.secondary {
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+      }
+
+      button:hover {
+        background-color: var(--vscode-button-hoverBackground);
+      }
+
+      button.secondary:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .array-item {
+        display: flex;
+        margin-bottom: 8px;
+        align-items: center;
+      }
+
+      .array-item input,
+      .array-item select {
+        flex: 1;
+        margin-right: 8px;
+      }
+
+      .hidden {
         display: none;
       }
-      .tab-content.active {
-        display: block;
-      }
-      .dependency-item {
+
+      .action-buttons {
+        margin-top: 20px;
         display: flex;
-        align-items: center;
+        justify-content: flex-end;
         gap: 10px;
-        margin-bottom: 8px;
-      }
-      .dependency-item input,
-      .dependency-item select {
-        flex: 1;
+        border-top: 1px solid var(--vscode-panel-border);
+        padding-top: 15px;
       }
     </style>
   </head>
   <body>
-    <form id="taskForm">
-      <div class="tab-container">
-        <div class="tab-buttons">
-          <button
-            type="button"
-            class="tab-button active"
-            onclick="showTab('basic')"
-          >
-            Basic
-          </button>
-          <button
-            type="button"
-            class="tab-button"
-            onclick="showTab('execution')"
-          >
-            Execution
-          </button>
-          <button
-            type="button"
-            class="tab-button"
-            onclick="showTab('presentation')"
-          >
-            Presentation
-          </button>
-          <button
-            type="button"
-            class="tab-button"
-            onclick="showTab('dependencies')"
-          >
-            Dependencies
-          </button>
-          <button
-            type="button"
-            class="tab-button"
-            onclick="showTab('advanced')"
-          >
-            Advanced
-          </button>
+    <div class="settings-container">
+      <!-- Settings Sidebar -->
+      <div class="settings-sidebar">
+        <div class="settings-sidebar-header">Task Configuration</div>
+        <div class="settings-nav-item active" data-section="basic">Basic</div>
+        <div class="settings-nav-item" data-section="execution">Execution</div>
+        <div class="settings-nav-item" data-section="presentation">
+          Presentation
         </div>
+        <div class="settings-nav-item" data-section="dependencies">
+          Dependencies
+        </div>
+        <div class="settings-nav-item" data-section="advanced">Advanced</div>
+      </div>
 
-        <!-- Basic Tab -->
-        <div id="basicTab" class="tab-content active">
-          <div class="form-group">
-            <label for="taskLabel">Task Label *</label>
-            <input type="text" id="taskLabel" required />
-          </div>
-          <div class="form-group">
-            <label for="taskType">Task Type *</label>
-            <select id="taskType" required>
-              <option value="shell">Shell</option>
-              <option value="npm">npm</option>
-              <option value="typescript">TypeScript</option>
-              <option value="grunt">Grunt</option>
-              <option value="gulp">Gulp</option>
-              <option value="jake">Jake</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="command">Command *</label>
-            <input type="text" id="command" required />
-          </div>
-          <div class="form-group">
-            <label for="detail">Detail/Description</label>
-            <input type="text" id="detail" />
-          </div>
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input type="checkbox" id="isBackground" />
-              <label for="isBackground">Run in Background</label>
+      <!-- Settings Content -->
+      <div class="settings-content">
+        <form id="taskForm">
+          <!-- Basic Settings Section -->
+          <div class="settings-section" id="basic-section">
+            <div class="settings-content-header">Basic Configuration</div>
+
+            <div class="settings-section-description">
+              Configure the core properties of your task including its name,
+              type, and the command to execute.
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="taskLabel"
+                >Task Label</label
+              >
+              <div class="setting-item-description">
+                A short name that identifies this task in the tasks list.
+              </div>
+              <input type="text" id="taskLabel" required />
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="taskType">Task Type</label>
+              <div class="setting-item-description">
+                Specifies how the task should be executed.
+              </div>
+              <select id="taskType" required>
+                <option value="shell">Shell</option>
+                <option value="npm">npm</option>
+                <option value="typescript">TypeScript</option>
+                <option value="grunt">Grunt</option>
+                <option value="gulp">Gulp</option>
+                <option value="jake">Jake</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="command">Command</label>
+              <div class="setting-item-description">
+                The command to execute.
+              </div>
+              <input type="text" id="command" required />
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="detail"
+                >Detail/Description</label
+              >
+              <div class="setting-item-description">
+                Additional information about this task shown in the tasks list.
+              </div>
+              <input type="text" id="detail" />
+            </div>
+
+            <div class="setting-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="isBackground" />
+                <label for="isBackground" class="setting-item-label"
+                  >Run in Background</label
+                >
+              </div>
+              <div class="setting-item-description">
+                Run the task in the background without blocking other tasks.
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Execution Tab -->
-        <div id="executionTab" class="tab-content">
-          <div class="form-section">
-            <h3>Shell Options</h3>
-            <div class="form-group">
-              <label for="shellExecutable">Shell Executable</label>
+          <!-- Execution Settings Section -->
+          <div class="settings-section hidden" id="execution-section">
+            <div class="settings-content-header">Execution Options</div>
+
+            <div class="settings-section-title">Shell Options</div>
+            <div class="settings-section-description">
+              Configure how the shell should behave when executing this task.
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="shellExecutable"
+                >Shell Executable</label
+              >
+              <div class="setting-item-description">
+                The path to the shell executable to use (e.g., bash, cmd.exe,
+                powershell).
+              </div>
               <input
                 type="text"
                 id="shellExecutable"
                 placeholder="e.g., bash, cmd.exe, powershell"
               />
             </div>
-            <div class="form-group">
-              <label for="shellArgs">Shell Arguments</label>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="shellArgs"
+                >Shell Arguments</label
+              >
+              <div class="setting-item-description">
+                Arguments to pass to the shell executable (e.g., -c, /C).
+              </div>
               <input type="text" id="shellArgs" placeholder="e.g., -c, /C" />
             </div>
-          </div>
 
-          <div class="form-section">
-            <h3>Working Directory & Environment</h3>
-            <div class="form-group">
-              <label for="cwdSelect">Working Directory</label>
+            <div class="settings-section-title">
+              Working Directory & Environment
+            </div>
+            <div class="setting-item">
+              <label class="setting-item-label" for="cwdSelect"
+                >Working Directory</label
+              >
+              <div class="setting-item-description">
+                The directory from which the task command should be executed.
+              </div>
               <select id="cwdSelect" onchange="handleCwdSelection()">
                 <option value="custom">Custom Path</option>
                 <!-- Project paths will be populated dynamically -->
@@ -236,67 +328,24 @@
               </div>
             </div>
 
-            <script>
-              function handleCwdSelection() {
-                const select = document.getElementById("cwdSelect");
-                const customInput = document.getElementById("customCwdInput");
-                const cwdInput = document.getElementById("cwd");
-
-                if (select.value === "custom") {
-                  customInput.style.display = "block";
-                } else {
-                  customInput.style.display = "none";
-                  cwdInput.value = select.value;
-                }
-              }
-
-              // Initialize project paths in the dropdown
-              window.addEventListener("message", (event) => {
-                const message = event.data;
-                if (message.type === "init") {
-                  const select = document.getElementById("cwdSelect");
-                  const projectPaths = message.projectPaths || [];
-
-                  // Add project paths to the dropdown
-                  projectPaths.forEach((path) => {
-                    const option = document.createElement("option");
-                    option.value = path;
-                    option.textContent = path;
-                    select.appendChild(option);
-                  });
-
-                  // If editing an existing task, select the current working directory
-                  if (message.task?.options?.cwd) {
-                    const cwdValue = message.task.options.cwd;
-                    const matchingOption = Array.from(select.options).find(
-                      (opt) => opt.value === cwdValue,
-                    );
-
-                    if (matchingOption) {
-                      select.value = cwdValue;
-                    } else {
-                      select.value = "custom";
-                      document.getElementById("cwd").value = cwdValue;
-                    }
-                    handleCwdSelection();
-                  }
-                }
-              });
-            </script>
-
-            <div class="form-group">
-              <label>Environment Variables</label>
+            <div class="setting-item">
+              <label class="setting-item-label">Environment Variables</label>
+              <div class="setting-item-description">
+                Define environment variables that will be available to the task.
+              </div>
               <div id="envVars"></div>
               <button type="button" class="secondary" onclick="addEnvVar()">
                 Add Environment Variable
               </button>
             </div>
-          </div>
 
-          <div class="form-section">
-            <h3>Problem Matchers</h3>
-            <div class="form-group">
-              <div class="input-group">
+            <div class="settings-section-title">Problem Matchers</div>
+            <div class="setting-item">
+              <div class="setting-item-description">
+                Problem matchers scan the task output and highlight errors and
+                warnings.
+              </div>
+              <div class="array-item">
                 <select id="problemMatcherSelect">
                   <option value="$tsc">TypeScript ($tsc)</option>
                   <option value="$eslint-compact">
@@ -326,133 +375,255 @@
               <div id="problemMatchers" class="problem-matchers"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Presentation Tab -->
-        <div id="presentationTab" class="tab-content">
-          <div class="form-group">
-            <label for="reveal">Terminal Reveal</label>
-            <select id="reveal">
-              <option value="always">Always</option>
-              <option value="silent">Silent</option>
-              <option value="never">Never</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="panel">Panel Behavior</label>
-            <select id="panel">
-              <option value="shared">Shared</option>
-              <option value="dedicated">Dedicated</option>
-              <option value="new">New</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="group">Terminal Group</label>
-            <input type="text" id="group" placeholder="e.g., build" />
-          </div>
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input type="checkbox" id="echo" />
-              <label for="echo">Echo Command</label>
+          <!-- Presentation Settings Section -->
+          <div class="settings-section hidden" id="presentation-section">
+            <div class="settings-content-header">Presentation Options</div>
+            <div class="settings-section-description">
+              Configure how task output is presented in the terminal.
             </div>
-          </div>
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input type="checkbox" id="focus" />
-              <label for="focus">Focus Terminal</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input type="checkbox" id="clear" />
-              <label for="clear">Clear Terminal Before Execution</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input type="checkbox" id="showReuseMessage" />
-              <label for="showReuseMessage">Show Terminal Reuse Message</label>
-            </div>
-          </div>
-        </div>
 
-        <!-- Dependencies Tab -->
-        <div id="dependenciesTab" class="tab-content">
-          <div class="form-group">
-            <label for="dependsOrder">Dependency Execution Order</label>
-            <select id="dependsOrder">
-              <option value="sequence">Sequential</option>
-              <option value="parallel">Parallel</option>
-            </select>
+            <div class="setting-item">
+              <label class="setting-item-label" for="reveal"
+                >Terminal Reveal</label
+              >
+              <div class="setting-item-description">
+                Controls when the terminal should be revealed when this task
+                runs.
+              </div>
+              <select id="reveal">
+                <option value="always">Always</option>
+                <option value="silent">Silent</option>
+                <option value="never">Never</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="panel"
+                >Panel Behavior</label
+              >
+              <div class="setting-item-description">
+                Controls which terminal panel to use for task output.
+              </div>
+              <select id="panel">
+                <option value="shared">Shared</option>
+                <option value="dedicated">Dedicated</option>
+                <option value="new">New</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="group"
+                >Terminal Group</label
+              >
+              <div class="setting-item-description">
+                Group that this terminal belongs to.
+              </div>
+              <input type="text" id="group" placeholder="e.g., build" />
+            </div>
+
+            <div class="setting-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="echo" />
+                <label for="echo" class="setting-item-label"
+                  >Echo Command</label
+                >
+              </div>
+              <div class="setting-item-description">
+                Controls whether the command is echoed in the terminal before
+                execution.
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="focus" />
+                <label for="focus" class="setting-item-label"
+                  >Focus Terminal</label
+                >
+              </div>
+              <div class="setting-item-description">
+                Controls whether the terminal should be focused after task
+                execution starts.
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="clear" />
+                <label for="clear" class="setting-item-label"
+                  >Clear Terminal Before Execution</label
+                >
+              </div>
+              <div class="setting-item-description">
+                Controls whether the terminal is cleared before executing the
+                task.
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="showReuseMessage" />
+                <label for="showReuseMessage" class="setting-item-label"
+                  >Show Terminal Reuse Message</label
+                >
+              </div>
+              <div class="setting-item-description">
+                Controls whether to show the terminal reuse message when reusing
+                a terminal.
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Task Dependencies</label>
-            <div id="dependencies"></div>
-            <button type="button" class="secondary" onclick="addDependency()">
-              Add Dependency
+
+          <!-- Dependencies Settings Section -->
+          <div class="settings-section hidden" id="dependencies-section">
+            <div class="settings-content-header">Task Dependencies</div>
+            <div class="settings-section-description">
+              Configure which tasks need to be run before this task.
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="dependsOrder"
+                >Dependency Execution Order</label
+              >
+              <div class="setting-item-description">
+                Specifies whether dependencies should be run in sequence or in
+                parallel.
+              </div>
+              <select id="dependsOrder">
+                <option value="sequence">Sequential</option>
+                <option value="parallel">Parallel</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label">Task Dependencies</label>
+              <div class="setting-item-description">
+                Tasks that need to be run before this task.
+              </div>
+              <div id="dependencies"></div>
+              <button type="button" class="secondary" onclick="addDependency()">
+                Add Dependency
+              </button>
+            </div>
+          </div>
+
+          <!-- Advanced Settings Section -->
+          <div class="settings-section hidden" id="advanced-section">
+            <div class="settings-content-header">Advanced Options</div>
+            <div class="settings-section-description">
+              Configure additional advanced task options.
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="taskGroup"
+                >Task Group</label
+              >
+              <div class="setting-item-description">
+                The task group this task belongs to. Tasks can be run as part of
+                a group.
+              </div>
+              <select id="taskGroup">
+                <option value="">None</option>
+                <option value="build">Build</option>
+                <option value="test">Test</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="groupIsDefault" />
+                <label for="groupIsDefault" class="setting-item-label"
+                  >Set as Default Task for Group</label
+                >
+              </div>
+              <div class="setting-item-description">
+                Sets this task as the default task for its group.
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="runOn">Run On</label>
+              <div class="setting-item-description">
+                Controls when this task should be run.
+              </div>
+              <select id="runOn">
+                <option value="default">Default</option>
+                <option value="folderOpen">Folder Open</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="reevaluateOnRerun" />
+                <label for="reevaluateOnRerun" class="setting-item-label"
+                  >Re-evaluate on Rerun</label
+                >
+              </div>
+              <div class="setting-item-description">
+                Controls whether variable substitution should be reevaluated
+                when a task is rerun.
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-item-label" for="instanceLimit"
+                >Instance Limit</label
+              >
+              <div class="setting-item-description">
+                Limits the number of concurrent executions of this task.
+              </div>
+              <input type="number" id="instanceLimit" min="1" placeholder="1" />
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button type="button" class="secondary" onclick="cancelEdit()">
+              Cancel
             </button>
+            <button type="submit" class="primary">Save Task</button>
           </div>
-        </div>
-
-        <!-- Advanced Tab -->
-        <div id="advancedTab" class="tab-content">
-          <div class="form-group">
-            <label for="taskGroup">Task Group</label>
-            <select id="taskGroup">
-              <option value="">None</option>
-              <option value="build">Build</option>
-              <option value="test">Test</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input type="checkbox" id="groupIsDefault" />
-              <label for="groupIsDefault">Set as Default Task for Group</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="runOn">Run On</label>
-            <select id="runOn">
-              <option value="default">Default</option>
-              <option value="folderOpen">Folder Open</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <div class="checkbox-group">
-              <input type="checkbox" id="reevaluateOnRerun" />
-              <label for="reevaluateOnRerun">Re-evaluate on Rerun</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="instanceLimit">Instance Limit</label>
-            <input type="number" id="instanceLimit" min="1" placeholder="1" />
-          </div>
-        </div>
+        </form>
       </div>
+    </div>
 
-      <div class="button-group">
-        <button type="submit" class="primary">Save Task</button>
-        <button type="button" class="secondary" onclick="cancelEdit()">
-          Cancel
-        </button>
-      </div>
-    </form>
     <script>
       const vscode = acquireVsCodeApi();
       let problemMatchers = [];
       let envVars = new Map();
       let dependencies = [];
 
-      function showTab(tabName) {
-        document
-          .querySelectorAll(".tab-content")
-          .forEach((tab) => tab.classList.remove("active"));
-        document
-          .querySelectorAll(".tab-button")
-          .forEach((button) => button.classList.remove("active"));
+      // Show/hide sections based on sidebar navigation
+      document.querySelectorAll(".settings-nav-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          // Update active state in sidebar
+          document
+            .querySelectorAll(".settings-nav-item")
+            .forEach((el) => el.classList.remove("active"));
+          item.classList.add("active");
 
-        document.getElementById(tabName + "Tab").classList.add("active");
-        event.currentTarget.classList.add("active");
+          // Show the corresponding section
+          const sectionName = item.getAttribute("data-section");
+          document.querySelectorAll(".settings-section").forEach((section) => {
+            section.classList.add("hidden");
+          });
+          document
+            .getElementById(`${sectionName}-section`)
+            .classList.remove("hidden");
+        });
+      });
+
+      function handleCwdSelection() {
+        const select = document.getElementById("cwdSelect");
+        const customInput = document.getElementById("customCwdInput");
+        const cwdInput = document.getElementById("cwd");
+
+        if (select.value === "custom") {
+          customInput.style.display = "block";
+        } else {
+          customInput.style.display = "none";
+          cwdInput.value = select.value;
+        }
       }
 
       function addProblemMatcher() {
@@ -474,11 +645,11 @@
         container.innerHTML = "";
         problemMatchers.forEach((matcher) => {
           const div = document.createElement("div");
-          div.className = "dependency-item";
+          div.className = "array-item";
           div.innerHTML = `
-                    <span>${matcher}</span>
-                    <button type="button" class="secondary" onclick="removeProblemMatcher('${matcher}')">Remove</button>
-                `;
+            <span>${matcher}</span>
+            <button type="button" class="secondary" onclick="removeProblemMatcher('${matcher}')">Remove</button>
+          `;
           container.appendChild(div);
         });
       }
@@ -488,12 +659,12 @@
         const id = Date.now().toString();
 
         const div = document.createElement("div");
-        div.className = "env-pair";
+        div.className = "array-item";
         div.innerHTML = `
-                <input type="text" placeholder="Variable name" class="env-key" data-id="${id}">
-                <input type="text" placeholder="Value" class="env-value" data-id="${id}">
-                <button type="button" class="secondary" onclick="removeEnvVar('${id}')">Remove</button>
-            `;
+          <input type="text" placeholder="Variable name" class="env-key" data-id="${id}">
+          <input type="text" placeholder="Value" class="env-value" data-id="${id}">
+          <button type="button" class="secondary" onclick="removeEnvVar('${id}')">Remove</button>
+        `;
 
         envVarsContainer.appendChild(div);
         envVars.set(id, { key: "", value: "" });
@@ -514,7 +685,7 @@
 
       function removeEnvVar(id) {
         const element = document.querySelector(
-          `.env-pair input[data-id="${id}"]`,
+          `.array-item input[data-id="${id}"]`,
         ).parentNode;
         element.remove();
         envVars.delete(id);
@@ -525,17 +696,17 @@
         const id = Date.now().toString();
 
         const div = document.createElement("div");
-        div.className = "dependency-item";
+        div.className = "array-item";
         div.innerHTML = `
-                <input type="text" placeholder="Task name" class="dep-task" data-id="${id}">
-                <select class="dep-type" data-id="${id}">
-                    <option value="">Task name only</option>
-                    <option value="npm">npm</option>
-                    <option value="shell">shell</option>
-                    <option value="typescript">typescript</option>
-                </select>
-                <button type="button" class="secondary" onclick="removeDependency('${id}')">Remove</button>
-            `;
+          <input type="text" placeholder="Task name" class="dep-task" data-id="${id}">
+          <select class="dep-type" data-id="${id}">
+            <option value="">Task name only</option>
+            <option value="npm">npm</option>
+            <option value="shell">shell</option>
+            <option value="typescript">typescript</option>
+          </select>
+          <button type="button" class="secondary" onclick="removeDependency('${id}')">Remove</button>
+        `;
 
         container.appendChild(div);
         dependencies.push({ id, task: "", type: "" });
@@ -560,10 +731,14 @@
 
       function removeDependency(id) {
         const element = document.querySelector(
-          `.dependency-item input[data-id="${id}"]`,
+          `.array-item input[data-id="${id}"]`,
         ).parentNode;
         element.remove();
         dependencies = dependencies.filter((d) => d.id !== id);
+      }
+
+      function cancelEdit() {
+        vscode.postMessage({ type: "cancel" });
       }
 
       document.getElementById("taskForm").addEventListener("submit", (e) => {
@@ -663,10 +838,6 @@
         vscode.postMessage({ type: "save", task: cleanObject(taskData) });
       });
 
-      function cancelEdit() {
-        vscode.postMessage({ type: "cancel" });
-      }
-
       // Handle messages from extension
       window.addEventListener("message", (event) => {
         const message = event.data;
@@ -703,12 +874,12 @@
                     envVars.set(id.toString(), { key, value });
                     const envVarsContainer = document.getElementById("envVars");
                     const div = document.createElement("div");
-                    div.className = "env-pair";
+                    div.className = "array-item";
                     div.innerHTML = `
-                                    <input type="text" value="${key}" class="env-key" data-id="${id}">
-                                    <input type="text" value="${value}" class="env-value" data-id="${id}">
-                                    <button type="button" class="secondary" onclick="removeEnvVar('${id}')">Remove</button>
-                                `;
+                      <input type="text" value="${key}" class="env-key" data-id="${id}">
+                      <input type="text" value="${value}" class="env-value" data-id="${id}">
+                      <button type="button" class="secondary" onclick="removeEnvVar('${id}')">Remove</button>
+                    `;
                     envVarsContainer.appendChild(div);
                   },
                 );
@@ -737,17 +908,17 @@
 
                   const container = document.getElementById("dependencies");
                   const div = document.createElement("div");
-                  div.className = "dependency-item";
+                  div.className = "array-item";
                   div.innerHTML = `
-                                    <input type="text" value="${depData.task}" class="dep-task" data-id="${id}">
-                                    <select class="dep-type" data-id="${id}">
-                                        <option value="">Task name only</option>
-                                        <option value="npm" ${depData.type === "npm" ? "selected" : ""}>npm</option>
-                                        <option value="shell" ${depData.type === "shell" ? "selected" : ""}>shell</option>
-                                        <option value="typescript" ${depData.type === "typescript" ? "selected" : ""}>typescript</option>
-                                    </select>
-                                    <button type="button" class="secondary" onclick="removeDependency('${id}')">Remove</button>
-                                `;
+                    <input type="text" value="${depData.task}" class="dep-task" data-id="${id}">
+                    <select class="dep-type" data-id="${id}">
+                      <option value="">Task name only</option>
+                      <option value="npm" ${depData.type === "npm" ? "selected" : ""}>npm</option>
+                      <option value="shell" ${depData.type === "shell" ? "selected" : ""}>shell</option>
+                      <option value="typescript" ${depData.type === "typescript" ? "selected" : ""}>typescript</option>
+                    </select>
+                    <button type="button" class="secondary" onclick="removeDependency('${id}')">Remove</button>
+                  `;
                   container.appendChild(div);
                 });
               }
@@ -788,6 +959,36 @@
                   message.task.runOptions.runOn || "default";
                 document.getElementById("instanceLimit").value =
                   message.task.runOptions.instanceLimit || "";
+              }
+            }
+
+            // Initialize project paths in the dropdown
+            if (message.projectPaths) {
+              const select = document.getElementById("cwdSelect");
+              const projectPaths = message.projectPaths || [];
+
+              // Add project paths to the dropdown
+              projectPaths.forEach((path) => {
+                const option = document.createElement("option");
+                option.value = path;
+                option.textContent = path;
+                select.appendChild(option);
+              });
+
+              // If editing an existing task, select the current working directory
+              if (message.task?.options?.cwd) {
+                const cwdValue = message.task.options.cwd;
+                const matchingOption = Array.from(select.options).find(
+                  (opt) => opt.value === cwdValue,
+                );
+
+                if (matchingOption) {
+                  select.value = cwdValue;
+                } else {
+                  select.value = "custom";
+                  document.getElementById("cwd").value = cwdValue;
+                }
+                handleCwdSelection();
               }
             }
             break;
