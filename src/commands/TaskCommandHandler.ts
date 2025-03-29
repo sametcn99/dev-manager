@@ -101,18 +101,6 @@ export class TaskCommandHandler {
       return;
     }
 
-    // Check if this is a workspace task (defined in tasks.json)
-    const wsConfig = vscode.workspace.getConfiguration("tasks", task.scope.uri);
-    const workspaceTasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
-    const isWorkspaceTask = workspaceTasks.some((t) => t.label === task.name);
-
-    if (!isWorkspaceTask) {
-      vscode.window.showErrorMessage(
-        "Only workspace tasks (defined in tasks.json) can be deleted",
-      );
-      return;
-    }
-
     const answer = await vscode.window.showWarningMessage(
       `Are you sure you want to delete task "${task.name}"?`,
       { modal: true },

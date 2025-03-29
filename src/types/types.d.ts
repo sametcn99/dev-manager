@@ -1,5 +1,3 @@
-import * as vscode from "vscode";
-
 declare global {
   type PackageManager = "npm" | "yarn" | "pnpm" | "bun";
 
@@ -15,3 +13,5 @@ declare global {
     notificationLevel: UpdateNotificationType;
   };
 }
+
+export {};

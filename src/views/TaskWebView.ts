@@ -10,7 +10,7 @@ export class TaskWebView {
   constructor(
     extensionUri: vscode.Uri,
     private taskService: TaskService,
-    private initialTask?: CustomTaskDefinition,
+    private initialTask?: vscode.TaskDefinition,
     private workspaceFolder?: vscode.WorkspaceFolder,
     private projectPaths?: string[],
   ) {
@@ -77,7 +77,7 @@ export class TaskWebView {
     }
   }
 
-  private async _handleSaveTask(taskData: CustomTaskDefinition) {
+  private async _handleSaveTask(taskData: vscode.TaskDefinition) {
     try {
       if (!this.workspaceFolder) {
         this.workspaceFolder = await this._selectWorkspaceFolder();
