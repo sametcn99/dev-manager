@@ -7,200 +7,451 @@
     <style>
       body {
         font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-          "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-          sans-serif;
-        padding: 20px;
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
         color: var(--vscode-foreground);
         background-color: var(--vscode-editor-background);
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        line-height: 1.4;
+        font-size: 13px;
       }
-      h1,
-      h2,
-      h3 {
-        color: var(--vscode-editor-foreground);
-        border-bottom: 1px solid var(--vscode-panel-border);
-        padding-bottom: 10px;
+
+      .settings-container {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        height: 100vh;
+        overflow: hidden;
       }
+
+      /* Settings Sidebar */
+      .settings-sidebar {
+        border-right: 1px solid var(--vscode-sideBar-border);
+        background-color: var(--vscode-sideBar-background);
+        overflow-y: auto;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+
+      .settings-sidebar-header {
+        padding: 8px 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--vscode-sideBarSectionHeader-foreground);
+        background-color: var(--vscode-sideBarSectionHeader-background);
+        border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
+        letter-spacing: 0.1em;
+      }
+
+      .settings-nav-item {
+        padding: 8px 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        color: var(--vscode-sideBar-foreground);
+        font-size: 13px;
+      }
+
+      .settings-nav-item.active {
+        background-color: var(--vscode-list-activeSelectionBackground);
+        color: var(--vscode-list-activeSelectionForeground);
+        font-weight: 600;
+      }
+
+      .settings-nav-item:hover:not(.active) {
+        background-color: var(--vscode-list-hoverBackground);
+      }
+
+      /* Settings Content */
+      .settings-content {
+        padding: 20px 32px;
+        height: 100%;
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+
+      .settings-content-header {
+        font-size: 26px;
+        font-weight: 600;
+        margin-bottom: 25px;
+        color: var(--vscode-foreground);
+        line-height: 1.2;
+      }
+
+      .settings-section {
+        margin-bottom: 32px;
+        scroll-margin-top: 20px;
+      }
+
+      .settings-section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--vscode-settings-headerForeground);
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--vscode-settings-headerBorder);
+      }
+
       .project-info {
         background-color: var(--vscode-editor-inactiveSelectionBackground);
-        padding: 15px;
-        border-radius: 5px;
-        margin-bottom: 20px;
+        padding: 20px;
+        border-radius: 6px;
+        margin-bottom: 24px;
       }
+
       .summary {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
       }
+
       .summary-item {
         background-color: var(--vscode-button-secondaryBackground);
         color: var(--vscode-button-secondaryForeground);
-        padding: 15px;
+        padding: 16px;
         border-radius: 4px;
-        flex: 1;
-        min-width: 200px;
         text-align: center;
       }
+
+      .summary-item h3 {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        color: var(--vscode-foreground);
+      }
+
       .package-bar {
-        margin-bottom: 10px;
+        margin-bottom: 16px;
+        background-color: var(--vscode-editor-background);
+        border-radius: 4px;
+        overflow: hidden;
       }
+
       .package-name {
-        margin-bottom: 3px;
-        font-weight: 500;
+        padding: 8px;
+        font-weight: 600;
+        color: var(--vscode-foreground);
       }
+
       .progress-container {
         background-color: var(--vscode-editorWidget-background);
         height: 24px;
-        border-radius: 4px;
+        border-radius: 2px;
         position: relative;
         overflow: hidden;
       }
+
       .progress-bar {
         background-color: var(--vscode-progressBar-background);
         height: 100%;
         transition: width 0.3s ease;
       }
+
       .size-label {
         position: absolute;
-        right: 10px;
-        top: 3px;
+        right: 8px;
+        top: 4px;
         font-size: 12px;
         color: var(--vscode-editor-foreground);
       }
-      .tab-container {
-        margin-top: 30px;
-      }
-      .tab-buttons {
-        display: flex;
-        gap: 5px;
-        margin-bottom: 15px;
-      }
-      .tab-button {
-        padding: 8px 15px;
-        cursor: pointer;
-        background-color: var(--vscode-button-secondaryBackground);
-        color: var(--vscode-button-secondaryForeground);
-        border: none;
-        border-radius: 3px;
-      }
-      .tab-button.active {
-        background-color: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
-      }
-      .tab-content {
-        display: none;
-      }
-      .tab-content.active {
-        display: block;
-      }
+
       table {
         width: 100%;
         border-collapse: collapse;
+        margin: 16px 0;
       }
-      th,
-      td {
+
+      th {
         text-align: left;
-        padding: 12px 15px;
+        padding: 8px;
+        font-weight: 600;
+        background-color: var(--vscode-editorWidget-background);
+        color: var(--vscode-foreground);
         border-bottom: 1px solid var(--vscode-panel-border);
       }
-      th {
-        background-color: var(--vscode-editorWidget-background);
-        position: sticky;
-        top: 0;
+
+      td {
+        padding: 8px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+        color: var(--vscode-foreground);
       }
-      .small-text {
-        font-size: 12px;
-        color: var(--vscode-descriptionForeground);
+
+      tr:hover {
+        background-color: var(--vscode-list-hoverBackground);
+      }
+
+      /* Tab styles */
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--vscode-panel-border);
+        margin-bottom: 16px;
+      }
+
+      .tab {
+        padding: 8px 16px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        color: var(--vscode-foreground);
+        opacity: 0.8;
+      }
+
+      .tab:hover {
+        opacity: 1;
+      }
+
+      .tab.active {
+        border-bottom-color: var(--vscode-focusBorder);
+        opacity: 1;
+        font-weight: 600;
+      }
+
+      .content-section {
+        display: none;
+        padding-top: 16px;
+      }
+
+      .content-section.active {
+        display: block;
+      }
+
+      /* Custom VS Code style scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--vscode-scrollbarSlider-background);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--vscode-scrollbarSlider-hoverBackground);
+        border-radius: 5px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--vscode-scrollbarSlider-activeBackground);
       }
     </style>
   </head>
   <body>
-    <div class="project-info">
-      <h1>Dependency Analysis: {{projectName}}</h1>
-      <div class="summary">
-        <div class="summary-item">
-          <h3>Total Size</h3>
-          <div style="font-size: 24px">{{totalSize}}</div>
+    <div class="settings-container">
+      <div class="settings-sidebar">
+        <div class="settings-sidebar-header">Package Analysis</div>
+        <div class="settings-nav-item active" data-section="overview-section">
+          Overview
         </div>
-        <div class="summary-item">
-          <h3>Total Packages</h3>
-          <div style="font-size: 24px">{{totalPackages}}</div>
+        <div class="settings-nav-item" data-section="dependencies-section">
+          Dependencies
         </div>
-        <div class="summary-item">
-          <h3>Largest Package</h3>
-          <div style="font-size: 24px">{{largestPackageName}}</div>
-          <div class="small-text">{{largestPackageSize}}</div>
+        <div class="settings-nav-item" data-section="dev-dependencies-section">
+          Dev Dependencies
+        </div>
+        <div class="settings-nav-item" data-section="size-distribution-section">
+          Size Distribution
         </div>
       </div>
-    </div>
 
-    <h2>Top Dependencies by Size</h2>
-    <div class="top-packages">{{topPackagesContent}}</div>
+      <div class="settings-content">
+        <div
+          id="overview-section"
+          class="settings-section active"
+          data-nav="overview-section"
+        >
+          <div class="settings-content-header">Dependencies Size Analysis</div>
 
-    <div class="tab-container">
-      <h2>Package Size Categories</h2>
+          <div class="project-info">
+            <div class="summary">
+              <div class="summary-item">
+                <h3>Total Size</h3>
+                <div style="font-size: 24px">{{totalSize}}</div>
+              </div>
+              <div class="summary-item">
+                <h3>Total Packages</h3>
+                <div style="font-size: 24px">{{totalPackages}}</div>
+              </div>
+              <div class="summary-item">
+                <h3>Largest Package</h3>
+                <div style="font-size: 24px">{{largestPackageName}}</div>
+                <div class="small-text">{{largestPackageSize}}</div>
+              </div>
+            </div>
+          </div>
 
-      <div
-        class="tab-content active"
-        data-tab="huge"
-        data-project="{{projectName}}"
-      >
-        <h3>Huge Packages (≥10MB)</h3>
-        {{hugePackagesTable}}
-      </div>
-      <div class="tab-content" data-tab="large" data-project="{{projectName}}">
-        <h3>Large Packages (1MB-10MB)</h3>
-        {{largePackagesTable}}
-      </div>
-      <div class="tab-content" data-tab="medium" data-project="{{projectName}}">
-        <h3>Medium Packages (100KB-1MB)</h3>
-        {{mediumPackagesTable}}
-      </div>
-      <div class="tab-content" data-tab="small" data-project="{{projectName}}">
-        <h3>Small Packages (<100KB)</h3>
-        {{smallPackagesTable}}
-      </div>
-      <div class="tab-content" data-tab="all" data-project="{{projectName}}">
-        <h3>All Packages</h3>
-        {{allPackagesTable}}
+          <div class="settings-section-title">Top Dependencies by Size</div>
+          <div class="top-packages">{{topPackagesContent}}</div>
+        </div>
+
+        <div
+          id="dependencies-section"
+          class="settings-section"
+          data-nav="dependencies-section"
+        >
+          <div class="settings-content-header">Dependencies</div>
+          <div class="settings-section-description">
+            Regular dependencies that your project uses in production.
+          </div>
+          {{dependenciesContent}}
+        </div>
+
+        <div
+          id="dev-dependencies-section"
+          class="settings-section"
+          data-nav="dev-dependencies-section"
+        >
+          <div class="settings-content-header">Dev Dependencies</div>
+          <div class="settings-section-description">
+            Dependencies used for development and testing, not included in
+            production.
+          </div>
+          {{devDependenciesContent}}
+        </div>
+
+        <div
+          id="size-distribution-section"
+          class="settings-section"
+          data-nav="size-distribution-section"
+        >
+          <div class="settings-content-header">Size Distribution</div>
+          <div class="settings-section-description">
+            Packages categorized by their disk size
+          </div>
+
+          <div class="tabs">
+            <div class="tab active" data-tab="huge">Huge (≥10MB)</div>
+            <div class="tab" data-tab="large">Large (1MB-10MB)</div>
+            <div class="tab" data-tab="medium">Medium (100KB-1MB)</div>
+            <div class="tab" data-tab="small">Small (<100KB)</div>
+          </div>
+
+          <div class="content-section active" data-tab-content="huge">
+            <h3>Huge Packages (≥10MB)</h3>
+            {{hugePackagesTable}}
+          </div>
+          <div class="content-section" data-tab-content="large">
+            <h3>Large Packages (1MB-10MB)</h3>
+            {{largePackagesTable}}
+          </div>
+          <div class="content-section" data-tab-content="medium">
+            <h3>Medium Packages (100KB-1MB)</h3>
+            {{mediumPackagesTable}}
+          </div>
+          <div class="content-section" data-tab-content="small">
+            <h3>Small Packages (<100KB)</h3>
+            {{smallPackagesTable}}
+          </div>
+        </div>
       </div>
     </div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const tabButtons = document.querySelectorAll(".tab-button");
+      (function () {
+        // Initialize navigation functionality
+        const navItems = document.querySelectorAll(".settings-nav-item");
+        const sections = document.querySelectorAll(".settings-section");
 
-        tabButtons.forEach((button) => {
-          button.addEventListener("click", function () {
-            const projectId = this.getAttribute("data-project");
-            const tabType = this.getAttribute("data-tab");
+        // Tab functionality
+        const tabs = document.querySelectorAll(".tab");
+        const tabContents = document.querySelectorAll("[data-tab-content]");
 
-            // Find all buttons in this project's tab group and remove active class
-            document
-              .querySelectorAll(`.tab-button[data-project="${projectId}"]`)
-              .forEach((btn) => {
-                btn.classList.remove("active");
-              });
+        // Hide all sections except the first one
+        sections.forEach((section) => {
+          if (!section.classList.contains("active")) {
+            section.style.display = "none";
+          }
+        });
 
-            // Add active class to clicked button
-            this.classList.add("active");
+        // Tab click handler
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            const tabId = tab.getAttribute("data-tab");
 
-            // Hide all tab contents for this project
-            document
-              .querySelectorAll(`.tab-content[data-project="${projectId}"]`)
-              .forEach((content) => {
+            // Update active tab
+            tabs.forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+
+            // Show corresponding content
+            tabContents.forEach((content) => {
+              if (content.getAttribute("data-tab-content") === tabId) {
+                content.classList.add("active");
+              } else {
                 content.classList.remove("active");
-              });
-
-            // Show the selected tab content for this project
-            document
-              .querySelector(
-                `.tab-content[data-tab="${tabType}"][data-project="${projectId}"]`,
-              )
-              .classList.add("active");
+              }
+            });
           });
         });
-      });
+
+        // Navigation click handler
+        navItems.forEach((item) => {
+          item.addEventListener("click", () => {
+            const sectionId = item.getAttribute("data-section");
+
+            // Update active state in sidebar
+            navItems.forEach((navItem) => navItem.classList.remove("active"));
+            item.classList.add("active");
+
+            // Show only the selected section
+            sections.forEach((section) => {
+              if (section.id === sectionId) {
+                section.style.display = "block";
+              } else {
+                section.style.display = "none";
+              }
+            });
+          });
+        });
+
+        // Scroll spy functionality
+        const contentContainer = document.querySelector(".settings-content");
+
+        contentContainer.addEventListener("scroll", () => {
+          // Find which section is currently in view
+          let currentSection = "";
+          const scrollPosition = contentContainer.scrollTop;
+
+          sections.forEach((section) => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.offsetHeight;
+
+            if (
+              scrollPosition >= sectionTop - 50 &&
+              scrollPosition < sectionTop + sectionHeight - 50
+            ) {
+              currentSection = section.getAttribute("data-nav");
+            }
+          });
+
+          if (currentSection) {
+            // Update sidebar navigation
+            navItems.forEach((item) => {
+              if (item.getAttribute("data-section") === currentSection) {
+                item.classList.add("active");
+              } else {
+                item.classList.remove("active");
+              }
+            });
+          }
+        });
+
+        // Initialize all sections to be visible for scroll spy to work
+        sections.forEach((section) => {
+          section.style.display = "block";
+        });
+
+        // Handle WebView messages from extension
+        const vscode = acquireVsCodeApi();
+
+        window.addEventListener("message", (event) => {
+          const message = event.data;
+
+          // Handle any messages from the extension if needed
+          if (message.command === "updateData") {
+            // Handle data updates
+          }
+        });
+      })();
     </script>
   </body>
 </html>

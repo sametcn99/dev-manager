@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { PackageSizeService } from "../services/PackageSizeService";
+import { PackageSizeWebView } from "../views/PackageSizeWebView";
 import { DependencyTreeItem } from "../views/TreeItems";
 
 export class PackageSizeCommandHandler {
@@ -132,124 +133,22 @@ export class PackageSizeCommandHandler {
           },
         );
 
-        const panel = vscode.window.createWebviewPanel(
-          "dependencySizeAnalysis",
-          "Projects Dependencies Size Analysis",
-          vscode.ViewColumn.One,
-          {
-            enableScripts: true,
-            localResourceRoots: [],
-          },
-        );
+        // Create new WebView using the PackageSizeWebView class for each project
+        const panels: PackageSizeWebView[] = [];
 
-        const tabsHtml = allAnalysis
-          .map(
-            (result, index) =>
-              `<button class="tab-button ${index === 0 ? "active" : ""}" onclick="openProjectTab(event, 'tab-${index}')">${result.projectName}</button>`,
-          )
-          .join("");
-
-        const contentPromises = allAnalysis.map((result, index) => {
-          const sizeCategories = this.categorizeDependenciesBySize(
-            result.packages,
+        for (const result of allAnalysis) {
+          panels.push(
+            new PackageSizeWebView(
+              this.context.extensionUri,
+              this.packageSizeService,
+              result.projectName,
+              {
+                totalSize: result.totalSize,
+                packages: result.packages,
+              },
+            ),
           );
-          return this.generateDetailedDependencyReportHtml(
-            result.projectName,
-            this.packageSizeService.formatSize(result.totalSize),
-            result.packages,
-            sizeCategories,
-            index,
-          ).then(
-            (html) => `
-            <div id="tab-${index}" class="tab-content ${index === 0 ? "active" : ""}">
-              ${html}
-            </div>
-          `,
-          );
-        });
-
-        const contentHtml = await Promise.all(contentPromises);
-
-        panel.webview.html = `
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Projects Dependencies Size Analysis</title>
-            <style>
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-                padding: 20px;
-                color: var(--vscode-foreground);
-                background-color: var(--vscode-editor-background);
-              }
-              .tab-buttons {
-                display: flex;
-                gap: 5px;
-                margin-bottom: 15px;
-                flex-wrap: wrap;
-              }
-              .tab-button {
-                padding: 8px 15px;
-                cursor: pointer;
-                background-color: var(--vscode-button-secondaryBackground);
-                color: var(--vscode-button-secondaryForeground);
-                border: none;
-                border-radius: 3px;
-              }
-              .tab-button.active {
-                background-color: var(--vscode-button-background);
-                color: var(--vscode-button-foreground);
-              }
-              .tab-content {
-                display: none;
-              }
-              .tab-content.active {
-                display: block;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="tab-buttons">
-              ${tabsHtml}
-            </div>
-            ${contentHtml.join("")}
-            <script>
-              function openProjectTab(evt, tabName) {
-                const tabContents = document.getElementsByClassName('tab-content');
-                for (let i = 0; i < tabContents.length; i++) {
-                  tabContents[i].classList.remove('active');
-                }
-
-                const tabButtons = document.getElementsByClassName('tab-button');
-                for (let i = 0; i < tabButtons.length; i++) {
-                  tabButtons[i].classList.remove('active');
-                }
-
-                document.getElementById(tabName).classList.add('active');
-                evt.currentTarget.classList.add('active');
-              }
-
-              function openSizeTab(evt, tabName, projectIndex) {
-                const projectContent = document.getElementById('tab-' + projectIndex);
-                const tabContents = projectContent.getElementsByClassName('size-tab-content');
-                for (let i = 0; i < tabContents.length; i++) {
-                  tabContents[i].classList.remove('active');
-                }
-
-                const tabButtons = projectContent.getElementsByClassName('size-tab-button');
-                for (let i = 0; i < tabButtons.length; i++) {
-                  tabButtons[i].classList.remove('active');
-                }
-
-                document.getElementById(tabName + '-' + projectIndex).classList.add('active');
-                evt.currentTarget.classList.add('active');
-              }
-            </script>
-          </body>
-          </html>
-        `;
+        }
       } catch (error) {
         vscode.window.showErrorMessage(
           `Failed to analyze dependencies sizes for all projects: ${error}`,
@@ -299,34 +198,14 @@ export class PackageSizeCommandHandler {
         this.packageSizeService.getTotalDependenciesSize(projectPath!),
       );
 
-      const formattedTotalSize = this.packageSizeService.formatSize(
-        analysis.totalSize,
-      );
-
       const projectName = vscode.workspace.asRelativePath(projectPath);
 
-      // Create and show webview with enhanced visualization
-      const panel = vscode.window.createWebviewPanel(
-        "dependencySizeAnalysis",
-        `Dependencies Size Analysis: ${projectName}`,
-        vscode.ViewColumn.One,
-        {
-          enableScripts: true,
-          localResourceRoots: [],
-        },
-      );
-
-      // Group packages by size categories
-      const sizeCategories = this.categorizeDependenciesBySize(
-        analysis.packages,
-      );
-
-      // Generate HTML with interactive elements and better visualization
-      panel.webview.html = await this.generateDetailedDependencyReportHtml(
+      // Use the new PackageSizeWebView class instead of manually creating a panel
+      new PackageSizeWebView(
+        this.context.extensionUri,
+        this.packageSizeService,
         projectName,
-        formattedTotalSize,
-        analysis.packages,
-        sizeCategories,
+        analysis,
       );
     } catch (error) {
       vscode.window.showErrorMessage(
@@ -355,6 +234,8 @@ export class PackageSizeCommandHandler {
 
   /**
    * Generates detailed HTML report with interactive elements for dependency analysis
+   *
+   * @deprecated Use PackageSizeWebView class instead
    */
   private async generateDetailedDependencyReportHtml(
     projectName: string,
