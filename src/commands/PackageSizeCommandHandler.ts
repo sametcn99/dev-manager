@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
-import { PackageSizeService } from "../services/PackageSizeService";
+import {
+  DependencyAnalysisResult,
+  PackageSizeService,
+} from "../services/PackageSizeService";
 import { PackageSizeWebView } from "../views/PackageSizeWebView";
 import { DependencyTreeItem } from "../views/TreeItems";
 
@@ -119,15 +122,51 @@ export class PackageSizeCommandHandler {
           async () => {
             const results = [];
             for (const project of projects) {
-              const analysis =
-                await this.packageSizeService.getTotalDependenciesSize(
-                  project.path,
+              try {
+                // Check if node_modules exists first
+                const nodeModulesExists =
+                  await this.packageSizeService.checkNodeModulesExists(
+                    project.path,
+                  );
+
+                let analysis: DependencyAnalysisResult;
+                if (nodeModulesExists) {
+                  // If node_modules exists, get the analysis as usual
+                  analysis =
+                    await this.packageSizeService.getTotalDependenciesSize(
+                      project.path,
+                    );
+                } else {
+                  // If node_modules doesn't exist, create an empty result with dependenciesInstalled=false
+                  analysis = {
+                    totalSize: 0,
+                    packages: [],
+                    dependenciesInstalled: false,
+                  };
+                }
+
+                results.push({
+                  projectName: project.name,
+                  path: project.path,
+                  analysis: analysis,
+                });
+              } catch (error) {
+                // Handle errors for individual projects without failing the entire operation
+                console.error(
+                  `Error analyzing project ${project.name}: ${error}`,
                 );
-              results.push({
-                projectName: project.name,
-                totalSize: analysis.totalSize,
-                packages: analysis.packages,
-              });
+
+                // Add an empty result for this project
+                results.push({
+                  projectName: project.name,
+                  path: project.path,
+                  analysis: {
+                    totalSize: 0,
+                    packages: [],
+                    dependenciesInstalled: false,
+                  },
+                });
+              }
             }
             return results;
           },
@@ -141,11 +180,8 @@ export class PackageSizeCommandHandler {
             new PackageSizeWebView(
               this.context.extensionUri,
               this.packageSizeService,
-              result.projectName,
-              {
-                totalSize: result.totalSize,
-                packages: result.packages,
-              },
+              result.path,
+              result.analysis,
             ),
           );
         }
@@ -194,13 +230,28 @@ export class PackageSizeCommandHandler {
     };
 
     try {
-      const analysis = await vscode.window.withProgress(progressOptions, () =>
-        this.packageSizeService.getTotalDependenciesSize(projectPath!),
-      );
+      // First, check if node_modules exists
+      const nodeModulesExists =
+        await this.packageSizeService.checkNodeModulesExists(projectPath);
+
+      let analysis: DependencyAnalysisResult;
+      if (nodeModulesExists) {
+        // If node_modules exists, proceed as usual
+        analysis = await vscode.window.withProgress(progressOptions, () =>
+          this.packageSizeService.getTotalDependenciesSize(projectPath!),
+        );
+      } else {
+        // If node_modules doesn't exist, create an empty result with dependenciesInstalled=false
+        analysis = {
+          totalSize: 0,
+          packages: [],
+          dependenciesInstalled: false,
+        };
+      }
 
       const projectName = vscode.workspace.asRelativePath(projectPath);
 
-      // Use the new PackageSizeWebView class instead of manually creating a panel
+      // Use the new PackageSizeWebView class
       new PackageSizeWebView(
         this.context.extensionUri,
         this.packageSizeService,

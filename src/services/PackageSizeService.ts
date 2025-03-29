@@ -1,5 +1,14 @@
 import * as vscode from "vscode";
 
+/**
+ * Interface for dependency analysis result
+ */
+export interface DependencyAnalysisResult {
+  totalSize: number;
+  packages: { name: string; size: number; files: number }[];
+  dependenciesInstalled: boolean;
+}
+
 export class PackageSizeService {
   // Get the size of a specific package
   public async getPackageSize(
@@ -14,17 +23,42 @@ export class PackageSizeService {
     return this.calculateDirectorySize(packageUri);
   }
 
+  /**
+   * Check if node_modules exists for the given project
+   */
+  public async checkNodeModulesExists(projectPath: string): Promise<boolean> {
+    const nodeModulesUri = vscode.Uri.joinPath(
+      vscode.Uri.file(projectPath),
+      "node_modules",
+    );
+
+    try {
+      const stat = await vscode.workspace.fs.stat(nodeModulesUri);
+      return stat.type === vscode.FileType.Directory;
+    } catch {
+      // If error occurs, node_modules doesn't exist or can't be accessed
+      return false;
+    }
+  }
+
   // Get total size of all dependencies
-  public async getTotalDependenciesSize(projectPath: string): Promise<{
-    totalSize: number;
-    packages: { name: string; size: number; files: number }[];
-  }> {
+  public async getTotalDependenciesSize(
+    projectPath: string,
+  ): Promise<DependencyAnalysisResult> {
     const nodeModulesUri = vscode.Uri.joinPath(
       vscode.Uri.file(projectPath),
       "node_modules",
     );
     let totalSize = 0;
     const packages: { name: string; size: number; files: number }[] = [];
+
+    // Check if node_modules exists
+    const nodeModulesExists = await this.checkNodeModulesExists(projectPath);
+
+    if (!nodeModulesExists) {
+      // Return empty result with dependenciesInstalled=false to indicate node_modules doesn't exist
+      return { totalSize: 0, packages: [], dependenciesInstalled: false };
+    }
 
     try {
       const entries = await vscode.workspace.fs.readDirectory(nodeModulesUri);
@@ -70,16 +104,17 @@ export class PackageSizeService {
         }
       }
     } catch (error) {
+      // If we reach here, node_modules exists but there was another issue reading it
       vscode.window.showErrorMessage(
         `Error analyzing package sizes in ${nodeModulesUri.fsPath}: ${error}`,
       );
-      throw error;
+      return { totalSize: 0, packages: [], dependenciesInstalled: true };
     }
 
     // Sort packages by size in descending order
     packages.sort((a, b) => b.size - a.size);
 
-    return { totalSize, packages };
+    return { totalSize, packages, dependenciesInstalled: true };
   }
 
   private async calculateDirectorySize(
