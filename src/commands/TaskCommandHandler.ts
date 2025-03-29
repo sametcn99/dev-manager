@@ -55,52 +55,20 @@ export class TaskCommandHandler {
   }
 
   private async handleEditTask(task: vscode.Task) {
-    if (!task.definition) {
-      vscode.window.showErrorMessage(
-        "Cannot edit this task: missing task definition",
-      );
+    // Ensure task is properly defined
+    if (!task) {
+      vscode.window.showErrorMessage("Cannot edit task: No task provided");
       return;
     }
 
-    const scope = task.scope;
-    if (!scope || typeof scope === "number") {
-      vscode.window.showErrorMessage("Cannot edit this task: invalid scope");
-      return;
-    }
-
-    // Check if this is a workspace task (defined in tasks.json)
-    const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
-    const workspaceTasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
-    const isWorkspaceTask = workspaceTasks.some(
-      (t) => t.label === task.definition.label,
-    );
-
-    if (!isWorkspaceTask) {
-      vscode.window.showErrorMessage(
-        "Only workspace tasks (defined in tasks.json) can be edited",
-      );
-      return;
-    }
-
-    const projects = await this.projectTreeProvider.getAllProjects();
-    const projectPaths = projects.map((p) => p.path);
     new TaskWebView(
       this.context.extensionUri,
       this.taskService,
       task.definition,
-      scope,
-      projectPaths,
     );
   }
 
-  private async handleDeleteTask(task: vscode.Task) {
-    if (!task.name || !task.scope || typeof task.scope === "number") {
-      vscode.window.showErrorMessage(
-        "Cannot delete this task: invalid task configuration",
-      );
-      return;
-    }
-
+  private async handleDeleteTask(task: vscode.TaskDefinition) {
     const answer = await vscode.window.showWarningMessage(
       `Are you sure you want to delete task "${task.name}"?`,
       { modal: true },
@@ -110,7 +78,7 @@ export class TaskCommandHandler {
 
     if (answer === "Yes") {
       try {
-        await this.taskService.deleteTask(task.name, task.scope);
+        await this.taskService.deleteTask(task);
         vscode.window.showInformationMessage(
           `Task "${task.name}" deleted successfully`,
         );

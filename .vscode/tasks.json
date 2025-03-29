@@ -53,6 +53,37 @@
       "label": "tasks: watch-tests",
       "dependsOn": ["npm: watch", "npm: watch-tests"],
       "problemMatcher": []
+    },
+    {
+      "label": "build-and-run",
+      "type": "shell",
+      "dependsOrder": "sequence",
+      "dependsOn": ["npm: compile"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "group": "test",
+      "windows": {
+        "command": "code-insiders --extensionDevelopmentPath=${workspaceFolder}"
+      },
+      "linux": {
+        "command": "code --extensionDevelopmentPath=${workspaceFolder}"
+      },
+      "osx": {
+        "command": "code --extensionDevelopmentPath=${workspaceFolder}"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "compile",
+      "group": "build",
+      "problemMatcher": ["$tsc", "$esbuild"],
+      "label": "npm: compile",
+      "presentation": {
+        "reveal": "silent"
+      }
     }
   ]
 }

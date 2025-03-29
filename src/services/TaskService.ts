@@ -188,13 +188,10 @@ export class TaskService {
     }
   }
 
-  async deleteTask(
-    taskId: string,
-    scope: vscode.WorkspaceFolder,
-  ): Promise<void> {
-    const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
+  async deleteTask(task: vscode.TaskDefinition): Promise<void> {
+    const wsConfig = vscode.workspace.getConfiguration("tasks");
     const tasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
-    const updatedTasks = tasks.filter((task) => task.label !== taskId);
+    const updatedTasks = tasks.filter((t) => t.label !== task.label);
     await wsConfig.update(
       "tasks",
       updatedTasks,
@@ -209,18 +206,53 @@ export class TaskService {
   ): Promise<void> {
     const wsConfig = vscode.workspace.getConfiguration("tasks", scope.uri);
     const tasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
-    const taskIndex = tasks.findIndex((task) => task.label === taskId);
+
+    // First try to find the task by label
+    let taskIndex = tasks.findIndex((task) => task.label === taskId);
+
+    // If not found, try to find by task name (some tasks might be referenced by name)
+    if (taskIndex === -1) {
+      taskIndex = tasks.findIndex((task) => task.name === taskId);
+    }
 
     if (taskIndex !== -1) {
+      // Preserve fields that might be missing in the new config but present in the original
       tasks[taskIndex] = {
         ...tasks[taskIndex],
         ...newConfig,
       } as vscode.TaskDefinition;
+
       await wsConfig.update(
         "tasks",
         tasks,
         vscode.ConfigurationTarget.WorkspaceFolder,
       );
+    } else {
+      console.warn(
+        `Task "${taskId}" not found in tasks.json, it may be auto-generated`,
+      );
+
+      // For auto-generated tasks, we need to create a new task entry
+      if (newConfig.label) {
+        // Check if another task with the same label already exists
+        if (
+          tasks.some((t) => t.label === newConfig.label && t.label !== taskId)
+        ) {
+          throw new Error(
+            `Task with label "${newConfig.label}" already exists`,
+          );
+        }
+
+        // Add the task as a new definition
+        tasks.push(newConfig);
+        await wsConfig.update(
+          "tasks",
+          tasks,
+          vscode.ConfigurationTarget.WorkspaceFolder,
+        );
+      } else {
+        throw new Error(`Cannot create task: missing label`);
+      }
     }
   }
 }
