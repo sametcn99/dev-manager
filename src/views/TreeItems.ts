@@ -14,11 +14,6 @@ export class ProjectTreeItem extends vscode.TreeItem {
     this.description = `${packageManager}${parentProject ? ` • nested in ${parentProject.name}` : ""}`;
     this.iconPath = new vscode.ThemeIcon("package");
     this.contextValue = "project";
-    this.command = {
-      command: "dev-manager.analyzeDependenciesSizes",
-      title: "Analyze Dependencies Sizes",
-      arguments: [{ path: path }],
-    };
   }
 }
 
