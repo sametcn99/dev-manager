@@ -265,6 +265,13 @@ export class TasksGroupTreeItem extends vscode.TreeItem {
 export class TaskTreeItem extends vscode.TreeItem {
   constructor(public readonly task: vscode.Task) {
     super(task.name || "Unnamed Task", vscode.TreeItemCollapsibleState.None);
+
+    // Get the task ID from either the label in definition or the task name
+    const taskId =
+      task.definition && "label" in task.definition
+        ? task.definition.label
+        : task.name;
+
     this.description = task.source;
     this.tooltip = `Type: ${task.definition.type}\nSource: ${task.source}`;
     this.iconPath = new vscode.ThemeIcon("play");
@@ -272,12 +279,9 @@ export class TaskTreeItem extends vscode.TreeItem {
     this.command = {
       command: "dev-manager.runTask",
       title: "Run Task",
-      // Remove the slash prefix from the task name
       arguments: [
         {
-          taskId: task.name.startsWith("/")
-            ? task.name.substring(1)
-            : task.name,
+          taskId: taskId.startsWith("/") ? taskId.substring(1) : taskId,
         },
       ],
     };

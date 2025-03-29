@@ -240,8 +240,7 @@
         },
         {
           "command": "dev-manager.runTask",
-          "when": "view == devManagerTasks && viewItem == task",
-          "group": "inline"
+          "when": "view == devManagerTasks && viewItem == task"
         }
       ]
     }
