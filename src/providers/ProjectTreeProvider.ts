@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { ProjectService } from "../services/ProjectService";
-import { TaskService } from "../services/TaskService";
 import {
   DependencyGroupTreeItem,
   DependencyTreeItem,
@@ -10,8 +9,6 @@ import {
   ProjectTreeItem,
   ScriptGroupTreeItem,
   ScriptTreeItem,
-  TasksGroupTreeItem,
-  TaskTreeItem,
   UpdateSettingsItem,
 } from "../views/TreeItems";
 
@@ -32,7 +29,7 @@ export class ProjectTreeProvider
     "bun",
   ];
 
-  constructor(private taskService: TaskService) {
+  constructor() {
     this.projectService = new ProjectService();
   }
 
@@ -69,29 +66,19 @@ export class ProjectTreeProvider
 
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
     if (!element) {
-      // Root level shows tasks and projects
+      // Root level shows only projects
       this.projects = await this.projectService.scanWorkspace();
 
-      const rootItems: vscode.TreeItem[] = [
-        new TasksGroupTreeItem(),
-        ...this.projects.map((project) => {
-          const parentProject = this.findParentProject(project.path);
-          return new ProjectTreeItem(
-            project.name,
-            project.path,
-            project.packageManager,
-            vscode.TreeItemCollapsibleState.Expanded,
-            parentProject,
-          );
-        }),
-      ];
-
-      return rootItems;
-    }
-
-    if (element instanceof TasksGroupTreeItem) {
-      const tasks = await this.taskService.getTasks();
-      return tasks.map((task) => new TaskTreeItem(task));
+      return this.projects.map((project) => {
+        const parentProject = this.findParentProject(project.path);
+        return new ProjectTreeItem(
+          project.name,
+          project.path,
+          project.packageManager,
+          vscode.TreeItemCollapsibleState.Expanded,
+          parentProject,
+        );
+      });
     }
 
     if (element instanceof ProjectTreeItem) {

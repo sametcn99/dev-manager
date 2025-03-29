@@ -1,15 +1,22 @@
 import * as vscode from "vscode";
 import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
+import { TasksTreeProvider } from "../providers/TasksTreeProvider";
 import { TaskService } from "../services/TaskService";
 import { TaskWebView } from "../views/TaskWebView";
 
 export class TaskCommandHandler {
   private taskService: TaskService;
   private projectTreeProvider: ProjectTreeProvider;
+  private tasksTreeProvider: TasksTreeProvider;
 
-  constructor(private readonly context: vscode.ExtensionContext) {
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    projectTreeProvider: ProjectTreeProvider,
+    tasksTreeProvider: TasksTreeProvider,
+  ) {
     this.taskService = new TaskService();
-    this.projectTreeProvider = new ProjectTreeProvider(this.taskService);
+    this.projectTreeProvider = projectTreeProvider;
+    this.tasksTreeProvider = tasksTreeProvider;
   }
 
   public registerCommands(context: vscode.ExtensionContext): void {
@@ -42,6 +49,7 @@ export class TaskCommandHandler {
         new TaskWebView(
           this.context.extensionUri,
           this.taskService,
+          this.tasksTreeProvider,
           projectPaths,
         );
       },
@@ -59,6 +67,7 @@ export class TaskCommandHandler {
     if (answer === "Yes") {
       try {
         await this.taskService.deleteTask(task);
+        this.tasksTreeProvider.refresh();
         vscode.window.showInformationMessage(
           `Task "${task.name}" deleted successfully`,
         );
@@ -151,9 +160,7 @@ export class TaskCommandHandler {
       );
     } catch (error) {
       console.error("Task execution error:", error);
-      vscode.window.showErrorMessage(
-        `Failed to run task: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      vscode.window.showErrorMessage(`Failed to execute task: ${error}`);
     }
   }
 }

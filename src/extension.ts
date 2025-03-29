@@ -1,75 +1,33 @@
 import * as vscode from "vscode";
-import { CommandHandlers } from "./commands/commandHandlers";
+import { TaskCommandHandler } from "./commands/TaskCommandHandler";
 import { ProjectTreeProvider } from "./providers/ProjectTreeProvider";
-import { PackageManagerService } from "./services/PackageManagerService";
+import { TasksTreeProvider } from "./providers/TasksTreeProvider";
 import { TaskService } from "./services/TaskService";
 
 export function activate(context: vscode.ExtensionContext) {
-  const packageManagerService = new PackageManagerService();
+  // Initialize services
   const taskService = new TaskService();
-  const projectTreeProvider = new ProjectTreeProvider(taskService);
 
-  // Track task execution to prevent unnecessary refreshes
-  let isTaskExecuting = false;
+  // Initialize providers
+  const projectTreeProvider = new ProjectTreeProvider();
+  const tasksTreeProvider = new TasksTreeProvider(taskService);
 
-  const commandHandlers = new CommandHandlers(
+  // Register views
+  vscode.window.registerTreeDataProvider(
+    "devManagerProjects",
     projectTreeProvider,
-    packageManagerService,
-    taskService,
+  );
+  vscode.window.registerTreeDataProvider("devManagerTasks", tasksTreeProvider);
+
+  // Initialize command handlers with providers
+  const taskCommandHandler = new TaskCommandHandler(
     context,
+    projectTreeProvider,
+    tasksTreeProvider,
   );
 
-  vscode.window.createTreeView("devManagerProjects", {
-    treeDataProvider: projectTreeProvider,
-  });
-
-  // Create a file system watcher for package.json files
-  const watcher = vscode.workspace.createFileSystemWatcher(
-    "**/package.json",
-    false,
-    false,
-    false,
-  );
-
-  // Refresh projects when package.json changes
-  watcher.onDidChange(() => projectTreeProvider.refresh());
-  watcher.onDidCreate(() => projectTreeProvider.refresh());
-  watcher.onDidDelete(() => projectTreeProvider.refresh());
-
-  // Create a file system watcher for tasks.json files
-  const tasksWatcher = vscode.workspace.createFileSystemWatcher(
-    "**/.vscode/tasks.json",
-    false,
-    false,
-    false,
-  );
-
-  // Refresh when tasks.json changes, but only if no task is currently executing
-  tasksWatcher.onDidChange(() => {
-    if (!isTaskExecuting) {
-      projectTreeProvider.refresh();
-    }
-  });
-  tasksWatcher.onDidCreate(() => projectTreeProvider.refresh());
-  tasksWatcher.onDidDelete(() => projectTreeProvider.refresh());
-
-  // Listen for task start/end events
-  context.subscriptions.push(
-    vscode.tasks.onDidStartTask(() => {
-      isTaskExecuting = true;
-    }),
-    vscode.tasks.onDidEndTask(() => {
-      // Use setTimeout to ensure any file changes have settled
-      setTimeout(() => {
-        isTaskExecuting = false;
-      }, 300);
-    }),
-  );
-
-  // Register the watchers to be disposed when extension is deactivated
-  context.subscriptions.push(watcher, tasksWatcher);
-
-  commandHandlers.registerCommands(context);
+  // Register commands
+  taskCommandHandler.registerCommands(context);
 }
 
 export function deactivate() {}

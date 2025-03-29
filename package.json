@@ -27,6 +27,11 @@
           "id": "devManagerProjects",
           "name": "Projects",
           "icon": "media/dependency.svg"
+        },
+        {
+          "id": "devManagerTasks",
+          "name": "Tasks",
+          "icon": "$(tasklist)"
         }
       ]
     },
@@ -165,6 +170,11 @@
           "command": "dev-manager.updateAllDependencies",
           "when": "view == devManagerProjects",
           "group": "2_modification"
+        },
+        {
+          "command": "dev-manager.createTask",
+          "when": "view == devManagerTasks",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -224,18 +234,13 @@
           "group": "inline"
         },
         {
-          "command": "dev-manager.createTask",
-          "when": "view == devManagerProjects && viewItem == tasksGroup",
-          "group": "inline"
-        },
-        {
           "command": "dev-manager.deleteTask",
-          "when": "view == devManagerProjects && viewItem == task",
+          "when": "view == devManagerTasks && viewItem == task",
           "group": "inline"
         },
         {
           "command": "dev-manager.runTask",
-          "when": "view == devManagerProjects && viewItem == task",
+          "when": "view == devManagerTasks && viewItem == task",
           "group": "inline"
         }
       ]

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { TasksTreeProvider } from "../providers/TasksTreeProvider";
 import { TaskService } from "../services/TaskService";
 
 export class TaskWebView {
@@ -12,6 +13,7 @@ export class TaskWebView {
   constructor(
     extensionUri: vscode.Uri,
     private taskService: TaskService,
+    private tasksTreeProvider: TasksTreeProvider,
     private projectPaths?: string[],
   ) {
     this._extensionUri = extensionUri;
@@ -102,6 +104,7 @@ export class TaskWebView {
         async () => {
           // Create new task with workspace folder
           await this.taskService.createTask(taskData, this.workspaceFolder);
+          this.tasksTreeProvider.refresh(); // Refresh the tasks view
           vscode.window.showInformationMessage(
             `Task "${taskData.label}" created successfully`,
           );
