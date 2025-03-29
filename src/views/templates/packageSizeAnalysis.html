@@ -18,62 +18,66 @@
         font-size: 13px;
       }
 
-      .settings-container {
-        display: grid;
-        grid-template-columns: 200px 1fr;
+      .container {
         height: 100vh;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
 
-      /* Settings Sidebar */
-      .settings-sidebar {
-        border-right: 1px solid var(--vscode-sideBar-border);
-        background-color: var(--vscode-sideBar-background);
-        overflow-y: auto;
+      /* Tab navigation */
+      .tab-nav {
         position: sticky;
         top: 0;
-        height: 100vh;
-      }
-
-      .settings-sidebar-header {
-        padding: 8px 20px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: var(--vscode-sideBarSectionHeader-foreground);
-        background-color: var(--vscode-sideBarSectionHeader-background);
-        border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
-        letter-spacing: 0.1em;
-      }
-
-      .settings-nav-item {
-        padding: 8px 20px;
-        cursor: pointer;
+        z-index: 10;
+        background-color: var(--vscode-editor-background);
+        border-bottom: 1px solid var(--vscode-panel-border);
         display: flex;
-        align-items: center;
-        color: var(--vscode-sideBar-foreground);
-        font-size: 13px;
+        overflow-x: auto;
       }
 
-      .settings-nav-item.active {
-        background-color: var(--vscode-list-activeSelectionBackground);
-        color: var(--vscode-list-activeSelectionForeground);
+      .tab-item {
+        padding: 12px 20px;
+        cursor: pointer;
+        color: var(--vscode-foreground);
+        opacity: 0.8;
+        font-size: 13px;
+        white-space: nowrap;
+        position: relative;
+      }
+
+      .tab-item.active {
+        opacity: 1;
         font-weight: 600;
       }
 
-      .settings-nav-item:hover:not(.active) {
+      .tab-item.active::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 2px;
+        background-color: var(--vscode-focusBorder);
+      }
+
+      .tab-item:hover:not(.active) {
+        opacity: 1;
         background-color: var(--vscode-list-hoverBackground);
       }
 
-      /* Settings Content */
-      .settings-content {
-        padding: 20px 32px;
-        height: 100%;
+      /* Content area */
+      .content-container {
+        flex: 1;
         overflow-y: auto;
-        box-sizing: border-box;
+        padding: 24px 32px;
       }
 
-      .settings-content-header {
+      .section {
+        margin-bottom: 40px;
+        scroll-margin-top: 50px; /* Ensures that when scrolled to, it appears below the tabs */
+      }
+
+      .section-header {
         font-size: 26px;
         font-weight: 600;
         margin-bottom: 25px;
@@ -81,18 +85,17 @@
         line-height: 1.2;
       }
 
-      .settings-section {
-        margin-bottom: 32px;
-        scroll-margin-top: 20px;
-      }
-
-      .settings-section-title {
+      .section-title {
         font-size: 13px;
         font-weight: 600;
         color: var(--vscode-settings-headerForeground);
         margin-bottom: 12px;
         padding-bottom: 6px;
         border-bottom: 1px solid var(--vscode-settings-headerBorder);
+      }
+
+      .section-description {
+        margin-bottom: 20px;
       }
 
       .project-info {
@@ -183,14 +186,14 @@
         background-color: var(--vscode-list-hoverBackground);
       }
 
-      /* Tab styles */
-      .tabs {
+      /* Inner Tabs styles */
+      .inner-tabs {
         display: flex;
         border-bottom: 1px solid var(--vscode-panel-border);
         margin-bottom: 16px;
       }
 
-      .tab {
+      .inner-tab {
         padding: 8px 16px;
         cursor: pointer;
         border-bottom: 2px solid transparent;
@@ -198,22 +201,22 @@
         opacity: 0.8;
       }
 
-      .tab:hover {
+      .inner-tab:hover {
         opacity: 1;
       }
 
-      .tab.active {
+      .inner-tab.active {
         border-bottom-color: var(--vscode-focusBorder);
         opacity: 1;
         font-weight: 600;
       }
 
-      .content-section {
+      .inner-content {
         display: none;
         padding-top: 16px;
       }
 
-      .content-section.active {
+      .inner-content.active {
         display: block;
       }
 
@@ -237,30 +240,24 @@
     </style>
   </head>
   <body>
-    <div class="settings-container">
-      <div class="settings-sidebar">
-        <div class="settings-sidebar-header">Package Analysis</div>
-        <div class="settings-nav-item active" data-section="overview-section">
-          Overview
-        </div>
-        <div class="settings-nav-item" data-section="dependencies-section">
-          Dependencies
-        </div>
-        <div class="settings-nav-item" data-section="dev-dependencies-section">
+    <div class="container">
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <div class="tab-item active" data-section="overview">Overview</div>
+        <div class="tab-item" data-section="dependencies">Dependencies</div>
+        <div class="tab-item" data-section="devDependencies">
           Dev Dependencies
         </div>
-        <div class="settings-nav-item" data-section="size-distribution-section">
+        <div class="tab-item" data-section="sizeDistribution">
           Size Distribution
         </div>
       </div>
 
-      <div class="settings-content">
-        <div
-          id="overview-section"
-          class="settings-section active"
-          data-nav="overview-section"
-        >
-          <div class="settings-content-header">Dependencies Size Analysis</div>
+      <!-- Content Container -->
+      <div class="content-container">
+        <!-- Overview Section -->
+        <div id="overview" class="section">
+          <div class="section-header">Dependencies Size Analysis</div>
 
           <div class="project-info">
             <div class="summary">
@@ -280,65 +277,56 @@
             </div>
           </div>
 
-          <div class="settings-section-title">Top Dependencies by Size</div>
+          <div class="section-title">Top Dependencies by Size</div>
           <div class="top-packages">{{topPackagesContent}}</div>
         </div>
 
-        <div
-          id="dependencies-section"
-          class="settings-section"
-          data-nav="dependencies-section"
-        >
-          <div class="settings-content-header">Dependencies</div>
-          <div class="settings-section-description">
+        <!-- Dependencies Section -->
+        <div id="dependencies" class="section">
+          <div class="section-header">Dependencies</div>
+          <div class="section-description">
             Regular dependencies that your project uses in production.
           </div>
           {{dependenciesContent}}
         </div>
 
-        <div
-          id="dev-dependencies-section"
-          class="settings-section"
-          data-nav="dev-dependencies-section"
-        >
-          <div class="settings-content-header">Dev Dependencies</div>
-          <div class="settings-section-description">
+        <!-- Dev Dependencies Section -->
+        <div id="devDependencies" class="section">
+          <div class="section-header">Dev Dependencies</div>
+          <div class="section-description">
             Dependencies used for development and testing, not included in
             production.
           </div>
           {{devDependenciesContent}}
         </div>
 
-        <div
-          id="size-distribution-section"
-          class="settings-section"
-          data-nav="size-distribution-section"
-        >
-          <div class="settings-content-header">Size Distribution</div>
-          <div class="settings-section-description">
+        <!-- Size Distribution Section -->
+        <div id="sizeDistribution" class="section">
+          <div class="section-header">Size Distribution</div>
+          <div class="section-description">
             Packages categorized by their disk size
           </div>
 
-          <div class="tabs">
-            <div class="tab active" data-tab="huge">Huge (≥10MB)</div>
-            <div class="tab" data-tab="large">Large (1MB-10MB)</div>
-            <div class="tab" data-tab="medium">Medium (100KB-1MB)</div>
-            <div class="tab" data-tab="small">Small (<100KB)</div>
+          <div class="inner-tabs">
+            <div class="inner-tab active" data-tab="huge">Huge (≥10MB)</div>
+            <div class="inner-tab" data-tab="large">Large (1MB-10MB)</div>
+            <div class="inner-tab" data-tab="medium">Medium (100KB-1MB)</div>
+            <div class="inner-tab" data-tab="small">Small (<100KB)</div>
           </div>
 
-          <div class="content-section active" data-tab-content="huge">
+          <div class="inner-content active" data-tab-content="huge">
             <h3>Huge Packages (≥10MB)</h3>
             {{hugePackagesTable}}
           </div>
-          <div class="content-section" data-tab-content="large">
+          <div class="inner-content" data-tab-content="large">
             <h3>Large Packages (1MB-10MB)</h3>
             {{largePackagesTable}}
           </div>
-          <div class="content-section" data-tab-content="medium">
+          <div class="inner-content" data-tab-content="medium">
             <h3>Medium Packages (100KB-1MB)</h3>
             {{mediumPackagesTable}}
           </div>
-          <div class="content-section" data-tab-content="small">
+          <div class="inner-content" data-tab-content="small">
             <h3>Small Packages (<100KB)</h3>
             {{smallPackagesTable}}
           </div>
@@ -348,32 +336,66 @@
 
     <script>
       (function () {
-        // Initialize navigation functionality
-        const navItems = document.querySelectorAll(".settings-nav-item");
-        const sections = document.querySelectorAll(".settings-section");
+        // Initialize variables
+        const tabItems = document.querySelectorAll(".tab-item");
+        const sections = document.querySelectorAll(".section");
+        const contentContainer = document.querySelector(".content-container");
 
-        // Tab functionality
-        const tabs = document.querySelectorAll(".tab");
-        const tabContents = document.querySelectorAll("[data-tab-content]");
+        // Inner tabs functionality (for Size Distribution section)
+        const innerTabs = document.querySelectorAll(".inner-tab");
+        const innerContents = document.querySelectorAll("[data-tab-content]");
 
-        // Hide all sections except the first one
-        sections.forEach((section) => {
-          if (!section.classList.contains("active")) {
-            section.style.display = "none";
-          }
+        // Tab click handler - smooth scroll to section
+        tabItems.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            const sectionId = tab.getAttribute("data-section");
+            const section = document.getElementById(sectionId);
+
+            // Scroll to section
+            contentContainer.scrollTo({
+              top: section.offsetTop - 48, // Adjust for tab height
+              behavior: "smooth",
+            });
+          });
         });
 
-        // Tab click handler
-        tabs.forEach((tab) => {
+        // Scroll spy functionality
+        contentContainer.addEventListener("scroll", () => {
+          const scrollPosition = contentContainer.scrollTop;
+
+          // Find the current visible section
+          let currentSectionId = sections[0].id;
+
+          sections.forEach((section) => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.offsetHeight;
+
+            if (scrollPosition >= sectionTop - 100) {
+              currentSectionId = section.id;
+            }
+          });
+
+          // Update active tab
+          tabItems.forEach((tab) => {
+            if (tab.getAttribute("data-section") === currentSectionId) {
+              tab.classList.add("active");
+            } else {
+              tab.classList.remove("active");
+            }
+          });
+        });
+
+        // Inner tab click handler
+        innerTabs.forEach((tab) => {
           tab.addEventListener("click", () => {
             const tabId = tab.getAttribute("data-tab");
 
-            // Update active tab
-            tabs.forEach((t) => t.classList.remove("active"));
+            // Update active inner tab
+            innerTabs.forEach((t) => t.classList.remove("active"));
             tab.classList.add("active");
 
             // Show corresponding content
-            tabContents.forEach((content) => {
+            innerContents.forEach((content) => {
               if (content.getAttribute("data-tab-content") === tabId) {
                 content.classList.add("active");
               } else {
@@ -381,63 +403,6 @@
               }
             });
           });
-        });
-
-        // Navigation click handler
-        navItems.forEach((item) => {
-          item.addEventListener("click", () => {
-            const sectionId = item.getAttribute("data-section");
-
-            // Update active state in sidebar
-            navItems.forEach((navItem) => navItem.classList.remove("active"));
-            item.classList.add("active");
-
-            // Show only the selected section
-            sections.forEach((section) => {
-              if (section.id === sectionId) {
-                section.style.display = "block";
-              } else {
-                section.style.display = "none";
-              }
-            });
-          });
-        });
-
-        // Scroll spy functionality
-        const contentContainer = document.querySelector(".settings-content");
-
-        contentContainer.addEventListener("scroll", () => {
-          // Find which section is currently in view
-          let currentSection = "";
-          const scrollPosition = contentContainer.scrollTop;
-
-          sections.forEach((section) => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
-
-            if (
-              scrollPosition >= sectionTop - 50 &&
-              scrollPosition < sectionTop + sectionHeight - 50
-            ) {
-              currentSection = section.getAttribute("data-nav");
-            }
-          });
-
-          if (currentSection) {
-            // Update sidebar navigation
-            navItems.forEach((item) => {
-              if (item.getAttribute("data-section") === currentSection) {
-                item.classList.add("active");
-              } else {
-                item.classList.remove("active");
-              }
-            });
-          }
-        });
-
-        // Initialize all sections to be visible for scroll spy to work
-        sections.forEach((section) => {
-          section.style.display = "block";
         });
 
         // Handle WebView messages from extension
