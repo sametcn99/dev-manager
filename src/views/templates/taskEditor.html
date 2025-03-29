@@ -208,6 +208,95 @@
       ::-webkit-scrollbar-thumb:hover {
         background: var(--vscode-scrollbarSlider-activeBackground);
       }
+
+      /* Custom select button styles */
+      .select-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+      }
+
+      .select-wrapper select {
+        flex: 1;
+      }
+
+      .custom-input-btn {
+        margin-left: 8px;
+        padding: 4px 6px;
+        font-size: 11px;
+        background-color: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border-radius: 2px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .custom-input-btn:hover {
+        background-color: var(--vscode-button-secondaryHoverBackground);
+      }
+
+      .custom-input-container {
+        display: none;
+        margin-top: 8px;
+      }
+
+      .custom-input-container.active {
+        display: block;
+      }
+
+      .nested-property {
+        margin-left: 20px;
+        position: relative;
+      }
+
+      .nested-property::before {
+        content: "";
+        position: absolute;
+        left: -12px;
+        top: 0;
+        height: 100%;
+        width: 1px;
+        background-color: var(--vscode-panel-border);
+      }
+
+      .nested-property::after {
+        content: "";
+        position: absolute;
+        left: -12px;
+        top: 12px;
+        width: 8px;
+        height: 1px;
+        background-color: var(--vscode-panel-border);
+      }
+
+      .property-path {
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 4px;
+      }
+
+      .property-type-selector {
+        margin-top: 4px;
+        margin-bottom: 8px;
+        display: flex;
+        gap: 8px;
+      }
+
+      .property-type-selector button {
+        padding: 2px 8px;
+        font-size: 11px;
+      }
+
+      .additional-property-container {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--vscode-panel-border);
+      }
+
+      .additional-property-container:last-child {
+        border-bottom: none;
+      }
     </style>
   </head>
   <body>
@@ -223,6 +312,9 @@
           Dependencies
         </div>
         <div class="tab-item" data-section="advanced-section">Advanced</div>
+        <div class="tab-item" data-section="additional-section">
+          Additional Properties
+        </div>
       </div>
 
       <!-- Content Container -->
@@ -252,14 +344,30 @@
               <div class="setting-item-description">
                 Specifies how the task should be executed.
               </div>
-              <select id="taskType" required>
-                <option value="shell">Shell</option>
-                <option value="npm">npm</option>
-                <option value="typescript">TypeScript</option>
-                <option value="grunt">Grunt</option>
-                <option value="gulp">Gulp</option>
-                <option value="jake">Jake</option>
-              </select>
+              <div class="select-wrapper">
+                <select id="taskType" required>
+                  <option value="shell">Shell</option>
+                  <option value="npm">npm</option>
+                  <option value="typescript">TypeScript</option>
+                  <option value="grunt">Grunt</option>
+                  <option value="gulp">Gulp</option>
+                  <option value="jake">Jake</option>
+                </select>
+                <button
+                  type="button"
+                  class="custom-input-btn"
+                  onclick="toggleCustomInput('taskType')"
+                >
+                  Custom
+                </button>
+              </div>
+              <div id="taskType-custom" class="custom-input-container">
+                <input
+                  type="text"
+                  id="taskType-custom-input"
+                  placeholder="Enter custom task type"
+                />
+              </div>
             </div>
 
             <div class="setting-item">
@@ -408,11 +516,27 @@
                 Controls when the terminal should be revealed when this task
                 runs.
               </div>
-              <select id="reveal">
-                <option value="always">Always</option>
-                <option value="silent">Silent</option>
-                <option value="never">Never</option>
-              </select>
+              <div class="select-wrapper">
+                <select id="reveal">
+                  <option value="always">Always</option>
+                  <option value="silent">Silent</option>
+                  <option value="never">Never</option>
+                </select>
+                <button
+                  type="button"
+                  class="custom-input-btn"
+                  onclick="toggleCustomInput('reveal')"
+                >
+                  Custom
+                </button>
+              </div>
+              <div id="reveal-custom" class="custom-input-container">
+                <input
+                  type="text"
+                  id="reveal-custom-input"
+                  placeholder="Enter custom reveal value"
+                />
+              </div>
             </div>
 
             <div class="setting-item">
@@ -422,11 +546,27 @@
               <div class="setting-item-description">
                 Controls which terminal panel to use for task output.
               </div>
-              <select id="panel">
-                <option value="shared">Shared</option>
-                <option value="dedicated">Dedicated</option>
-                <option value="new">New</option>
-              </select>
+              <div class="select-wrapper">
+                <select id="panel">
+                  <option value="shared">Shared</option>
+                  <option value="dedicated">Dedicated</option>
+                  <option value="new">New</option>
+                </select>
+                <button
+                  type="button"
+                  class="custom-input-btn"
+                  onclick="toggleCustomInput('panel')"
+                >
+                  Custom
+                </button>
+              </div>
+              <div id="panel-custom" class="custom-input-container">
+                <input
+                  type="text"
+                  id="panel-custom-input"
+                  placeholder="Enter custom panel value"
+                />
+              </div>
             </div>
 
             <div class="setting-item">
@@ -592,6 +732,25 @@
               </div>
               <input type="number" id="instanceLimit" min="1" placeholder="1" />
             </div>
+          </div>
+
+          <!-- Additional Properties Section -->
+          <div id="additional-section" class="settings-section">
+            <div class="settings-content-header">Additional Properties</div>
+            <div class="settings-section-description">
+              Add custom task properties or override existing properties with
+              custom values. You can add nested properties by using dot notation
+              in the property name (e.g., "options.customOption").
+            </div>
+
+            <div id="additionalProperties"></div>
+            <button
+              type="button"
+              class="secondary"
+              onclick="addAdditionalProperty()"
+            >
+              Add Custom Property
+            </button>
           </div>
 
           <div class="action-buttons">
@@ -848,23 +1007,123 @@
           },
         };
 
-        // Clean up undefined values recursively
-        function cleanObject(obj) {
-          Object.keys(obj).forEach((key) => {
-            if (obj[key] && typeof obj[key] === "object") {
-              cleanObject(obj[key]);
-              if (Object.keys(obj[key]).length === 0) {
-                delete obj[key];
-              }
-            } else if (obj[key] === undefined) {
-              delete obj[key];
+        // Process additional properties
+        const additionalProps = processAdditionalProperties();
+
+        // Merge additional properties into the task data
+        const finalTaskData = mergeAdditionalProperties(
+          taskData,
+          additionalProps,
+        );
+
+        // Send the task data to the extension
+        vscode.postMessage({ type: "save", task: cleanObject(finalTaskData) });
+      });
+
+      function processAdditionalProperties() {
+        const result = {};
+
+        additionalProperties.forEach((propData) => {
+          if (!propData.key) return; // Skip properties without a key
+
+          let value;
+
+          switch (propData.type) {
+            case "string":
+              value = propData.value || "";
+              break;
+
+            case "number":
+              value = parseFloat(propData.value) || 0;
+              break;
+
+            case "boolean":
+              value = Boolean(propData.value);
+              break;
+
+            case "object":
+              value = {};
+              propData.children.forEach((childData) => {
+                if (childData.key) {
+                  value[childData.key] = getValueByType(childData);
+                }
+              });
+              break;
+
+            case "array":
+              value = [];
+              propData.children.forEach((childData) => {
+                value.push(getValueByType(childData));
+              });
+              break;
+
+            default:
+              value = propData.value;
+          }
+
+          result[propData.key] = value;
+        });
+
+        return result;
+      }
+
+      function getValueByType(data) {
+        switch (data.type) {
+          case "string":
+            return data.value || "";
+          case "number":
+            return parseFloat(data.value) || 0;
+          case "boolean":
+            return Boolean(data.value);
+          case "object":
+            const obj = {};
+            if (data.children) {
+              data.children.forEach((childData) => {
+                if (childData.key) {
+                  obj[childData.key] = getValueByType(childData);
+                }
+              });
             }
-          });
-          return obj;
+            return obj;
+          case "array":
+            const arr = [];
+            if (data.children) {
+              data.children.forEach((childData) => {
+                arr.push(getValueByType(childData));
+              });
+            }
+            return arr;
+          default:
+            return data.value;
+        }
+      }
+
+      function mergeAdditionalProperties(taskData, additionalProps) {
+        // Create a deep copy of the task data
+        const result = JSON.parse(JSON.stringify(taskData));
+
+        // Process each additional property
+        for (const [path, value] of Object.entries(additionalProps)) {
+          // Handle dot notation paths
+          const parts = path.split(".");
+          let current = result;
+
+          // Navigate to the appropriate nested object
+          for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (!current[part] || typeof current[part] !== "object") {
+              current[part] = {};
+            }
+            current = current[part];
+          }
+
+          // Set the value on the final property
+          const lastPart = parts[parts.length - 1];
+          current[lastPart] = value;
         }
 
-        vscode.postMessage({ type: "save", task: cleanObject(taskData) });
-      });
+        return result;
+      }
 
       // Handle messages from extension
       window.addEventListener("message", (event) => {
@@ -988,10 +1247,810 @@
                 document.getElementById("instanceLimit").value =
                   message.task.runOptions.instanceLimit || "";
               }
+
+              // Additional properties
+              initializeAdditionalProperties(message.task);
             }
             break;
         }
       });
+
+      // Custom input handling
+      function toggleCustomInput(selectId) {
+        const customInputContainer = document.getElementById(
+          `${selectId}-custom`,
+        );
+        customInputContainer.classList.toggle("active");
+
+        // When activating custom input, focus it
+        if (customInputContainer.classList.contains("active")) {
+          document.getElementById(`${selectId}-custom-input`).focus();
+        }
+      }
+
+      // Additional properties handling
+      let additionalProperties = new Map();
+
+      function addAdditionalProperty() {
+        const container = document.getElementById("additionalProperties");
+        const id = Date.now().toString();
+
+        const propContainer = document.createElement("div");
+        propContainer.className = "additional-property-container";
+        propContainer.dataset.id = id;
+
+        propContainer.innerHTML = `
+          <div>
+            <label class="setting-item-label" for="prop-key-${id}">Property Name/Path</label>
+            <div class="setting-item-description">
+              Use dot notation for nested properties (e.g., options.myCustomProperty)
+            </div>
+            <input type="text" id="prop-key-${id}" placeholder="Property name/path" class="prop-key">
+          </div>
+
+          <div class="property-type-selector">
+            <button type="button" class="secondary property-type-btn" data-type="string" data-id="${id}" onclick="setPropertyType('${id}', 'string')">String</button>
+            <button type="button" class="secondary property-type-btn" data-type="number" data-id="${id}" onclick="setPropertyType('${id}', 'number')">Number</button>
+            <button type="button" class="secondary property-type-btn" data-type="boolean" data-id="${id}" onclick="setPropertyType('${id}', 'boolean')">Boolean</button>
+            <button type="button" class="secondary property-type-btn" data-type="object" data-id="${id}" onclick="setPropertyType('${id}', 'object')">Object</button>
+            <button type="button" class="secondary property-type-btn" data-type="array" data-id="${id}" onclick="setPropertyType('${id}', 'array')">Array</button>
+          </div>
+
+          <div id="prop-value-container-${id}">
+            <!-- Value input will be inserted here dynamically -->
+          </div>
+
+          <div style="margin-top: 10px;">
+            <button type="button" class="secondary" onclick="removeAdditionalProperty('${id}')">Remove Property</button>
+          </div>
+        `;
+
+        container.appendChild(propContainer);
+        additionalProperties.set(id, {
+          key: "",
+          type: "string",
+          value: "",
+          children: new Map(),
+        });
+
+        // Set up event listener for property key
+        const keyInput = document.getElementById(`prop-key-${id}`);
+        keyInput.addEventListener("input", (e) => {
+          const propData = additionalProperties.get(id);
+          if (propData) {
+            propData.key = e.target.value;
+            additionalProperties.set(id, propData);
+          }
+        });
+
+        // Default to string type
+        setPropertyType(id, "string");
+      }
+
+      function setPropertyType(id, type) {
+        // Update the property data
+        const propData = additionalProperties.get(id);
+        if (!propData) return;
+
+        propData.type = type;
+
+        // Reset value based on type
+        switch (type) {
+          case "string":
+            propData.value = "";
+            break;
+          case "number":
+            propData.value = 0;
+            break;
+          case "boolean":
+            propData.value = false;
+            break;
+          case "object":
+            propData.value = {};
+            propData.children = new Map();
+            break;
+          case "array":
+            propData.value = [];
+            propData.children = new Map();
+            break;
+        }
+
+        additionalProperties.set(id, propData);
+
+        // Highlight the selected type button
+        const container = document.querySelector(`[data-id="${id}"]`);
+        const buttons = container.querySelectorAll(".property-type-btn");
+        buttons.forEach((btn) => {
+          if (btn.dataset.type === type) {
+            btn.style.backgroundColor = "var(--vscode-button-background)";
+            btn.style.color = "var(--vscode-button-foreground)";
+          } else {
+            btn.style.backgroundColor =
+              "var(--vscode-button-secondaryBackground)";
+            btn.style.color = "var(--vscode-button-secondaryForeground)";
+          }
+        });
+
+        // Generate the appropriate input for the selected type
+        updatePropertyValueInput(id, type);
+      }
+
+      function updatePropertyValueInput(id, type) {
+        const container = document.getElementById(`prop-value-container-${id}`);
+        const propData = additionalProperties.get(id);
+
+        if (!container || !propData) return;
+
+        switch (type) {
+          case "string":
+            container.innerHTML = `
+              <label class="setting-item-label" for="prop-value-${id}">Value</label>
+              <input type="text" id="prop-value-${id}" placeholder="Property value" class="prop-value">
+            `;
+            const stringInput = document.getElementById(`prop-value-${id}`);
+            stringInput.value = propData.value || "";
+            stringInput.addEventListener("input", (e) => {
+              propData.value = e.target.value;
+              additionalProperties.set(id, propData);
+            });
+            break;
+
+          case "number":
+            container.innerHTML = `
+              <label class="setting-item-label" for="prop-value-${id}">Value</label>
+              <input type="number" id="prop-value-${id}" placeholder="0" class="prop-value">
+            `;
+            const numberInput = document.getElementById(`prop-value-${id}`);
+            numberInput.value = propData.value || 0;
+            numberInput.addEventListener("input", (e) => {
+              propData.value = parseFloat(e.target.value) || 0;
+              additionalProperties.set(id, propData);
+            });
+            break;
+
+          case "boolean":
+            container.innerHTML = `
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="prop-value-${id}" class="prop-value">
+                <label for="prop-value-${id}" class="setting-item-label">Value</label>
+              </div>
+            `;
+            const boolInput = document.getElementById(`prop-value-${id}`);
+            boolInput.checked = propData.value || false;
+            boolInput.addEventListener("change", (e) => {
+              propData.value = e.target.checked;
+              additionalProperties.set(id, propData);
+            });
+            break;
+
+          case "object":
+            container.innerHTML = `
+              <div class="nested-properties" id="nested-props-${id}">
+                <div class="setting-item-description">Object Properties</div>
+                <div id="object-children-${id}"></div>
+                <button type="button" class="secondary" onclick="addNestedProperty('${id}')">
+                  Add Object Property
+                </button>
+              </div>
+            `;
+            // Render any existing nested properties
+            renderNestedProperties(id);
+            break;
+
+          case "array":
+            container.innerHTML = `
+              <div class="nested-properties" id="nested-props-${id}">
+                <div class="setting-item-description">Array Items</div>
+                <div id="array-children-${id}"></div>
+                <button type="button" class="secondary" onclick="addArrayItem('${id}')">
+                  Add Array Item
+                </button>
+              </div>
+            `;
+            // Render any existing array items
+            renderArrayItems(id);
+            break;
+        }
+      }
+
+      function addNestedProperty(parentId) {
+        const parentData = additionalProperties.get(parentId);
+        if (!parentData) return;
+
+        const childId = Date.now().toString();
+        parentData.children.set(childId, {
+          key: "",
+          type: "string",
+          value: "",
+        });
+
+        const container = document.getElementById(
+          `object-children-${parentId}`,
+        );
+        const childElem = document.createElement("div");
+        childElem.className = "nested-property";
+        childElem.dataset.id = childId;
+
+        childElem.innerHTML = `
+          <div class="array-item">
+            <input type="text" placeholder="Property name" class="nested-key" data-parent="${parentId}" data-id="${childId}">
+            <select class="nested-type" data-parent="${parentId}" data-id="${childId}">
+              <option value="string">String</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+              <option value="object">Object</option>
+              <option value="array">Array</option>
+            </select>
+            <button type="button" class="secondary" onclick="removeNestedProperty('${parentId}', '${childId}')">Remove</button>
+          </div>
+          <div id="nested-value-${childId}" class="nested-value-container">
+            <input type="text" placeholder="Value" class="nested-value" data-parent="${parentId}" data-id="${childId}">
+          </div>
+        `;
+
+        container.appendChild(childElem);
+
+        // Set up event listeners
+        const keyInput = childElem.querySelector(".nested-key");
+        keyInput.addEventListener("input", (e) => {
+          const childData = parentData.children.get(childId);
+          if (childData) {
+            childData.key = e.target.value;
+            parentData.children.set(childId, childData);
+          }
+        });
+
+        const typeSelect = childElem.querySelector(".nested-type");
+        typeSelect.addEventListener("change", (e) => {
+          const childData = parentData.children.get(childId);
+          if (childData) {
+            childData.type = e.target.value;
+            updateNestedValueInput(parentId, childId, e.target.value);
+            parentData.children.set(childId, childData);
+          }
+        });
+
+        const valueInput = childElem.querySelector(".nested-value");
+        valueInput.addEventListener("input", (e) => {
+          const childData = parentData.children.get(childId);
+          if (childData) {
+            childData.value = e.target.value;
+            parentData.children.set(childId, childData);
+          }
+        });
+      }
+
+      function addArrayItem(parentId) {
+        const parentData = additionalProperties.get(parentId);
+        if (!parentData) return;
+
+        const childId = Date.now().toString();
+        parentData.children.set(childId, {
+          index: parentData.children.size,
+          type: "string",
+          value: "",
+        });
+
+        const container = document.getElementById(`array-children-${parentId}`);
+        const childElem = document.createElement("div");
+        childElem.className = "nested-property";
+        childElem.dataset.id = childId;
+
+        childElem.innerHTML = `
+          <div class="array-item">
+            <span class="property-path">Item ${parentData.children.size}</span>
+            <select class="nested-type" data-parent="${parentId}" data-id="${childId}">
+              <option value="string">String</option>
+              <option value="number">Number</option>
+              <option value="boolean">Boolean</option>
+              <option value="object">Object</option>
+              <option value="array">Array</option>
+            </select>
+            <button type="button" class="secondary" onclick="removeArrayItem('${parentId}', '${childId}')">Remove</button>
+          </div>
+          <div id="nested-value-${childId}" class="nested-value-container">
+            <input type="text" placeholder="Value" class="nested-value" data-parent="${parentId}" data-id="${childId}">
+          </div>
+        `;
+
+        container.appendChild(childElem);
+
+        // Set up event listeners
+        const typeSelect = childElem.querySelector(".nested-type");
+        typeSelect.addEventListener("change", (e) => {
+          const childData = parentData.children.get(childId);
+          if (childData) {
+            childData.type = e.target.value;
+            updateNestedValueInput(parentId, childId, e.target.value);
+            parentData.children.set(childId, childData);
+          }
+        });
+
+        // Initialize value input based on type
+        updateNestedValueInput(parentId, childId, childData.type);
+
+        index++;
+      }
+
+      function updateNestedValueInput(parentId, childId, type) {
+        const parentData = additionalProperties.get(parentId);
+        if (!parentData) return;
+
+        const childData = parentData.children.get(childId);
+        if (!childData) return;
+
+        const container = document.getElementById(`nested-value-${childId}`);
+
+        switch (type) {
+          case "string":
+            container.innerHTML = `
+              <input type="text" placeholder="Value" class="nested-value" data-parent="${parentId}" data-id="${childId}">
+            `;
+            const stringInput = container.querySelector(".nested-value");
+            stringInput.value = childData.value || "";
+            stringInput.addEventListener("input", (e) => {
+              childData.value = e.target.value;
+              parentData.children.set(childId, childData);
+            });
+            break;
+
+          case "number":
+            container.innerHTML = `
+              <input type="number" placeholder="0" class="nested-value" data-parent="${parentId}" data-id="${childId}">
+            `;
+            const numberInput = container.querySelector(".nested-value");
+            numberInput.value = childData.value || 0;
+            numberInput.addEventListener("input", (e) => {
+              childData.value = parseFloat(e.target.value) || 0;
+              parentData.children.set(childId, childData);
+            });
+            break;
+
+          case "boolean":
+            container.innerHTML = `
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="nested-value-checkbox-${childId}" class="nested-value" data-parent="${parentId}" data-id="${childId}">
+                <label for="nested-value-checkbox-${childId}">Value</label>
+              </div>
+            `;
+            const boolInput = container.querySelector(".nested-value");
+            boolInput.checked = childData.value || false;
+            boolInput.addEventListener("change", (e) => {
+              childData.value = e.target.checked;
+              parentData.children.set(childId, childData);
+            });
+            break;
+
+          case "object":
+            container.innerHTML = `
+              <div class="nested-properties">
+                <div class="setting-item-description">Object Properties</div>
+                <div id="object-children-${childId}"></div>
+                <button type="button" class="secondary" onclick="addSubNestedProperty('${parentId}', '${childId}')">
+                  Add Object Property
+                </button>
+              </div>
+            `;
+            childData.children = new Map();
+            break;
+
+          case "array":
+            container.innerHTML = `
+              <div class="nested-properties">
+                <div class="setting-item-description">Array Items</div>
+                <div id="array-children-${childId}"></div>
+                <button type="button" class="secondary" onclick="addSubArrayItem('${parentId}', '${childId}')">
+                  Add Array Item
+                </button>
+              </div>
+            `;
+            childData.children = new Map();
+            break;
+        }
+      }
+
+      function removeNestedProperty(parentId, childId) {
+        const parentData = additionalProperties.get(parentId);
+        if (!parentData) return;
+
+        parentData.children.delete(childId);
+
+        const childElem = document.querySelector(
+          `.nested-property[data-id="${childId}"]`,
+        );
+        if (childElem) {
+          childElem.remove();
+        }
+      }
+
+      function removeArrayItem(parentId, childId) {
+        removeNestedProperty(parentId, childId);
+
+        // Update array indices
+        const container = document.getElementById(`array-children-${parentId}`);
+        const items = container.querySelectorAll(".nested-property");
+        items.forEach((item, index) => {
+          const indexSpan = item.querySelector(".property-path");
+          if (indexSpan) {
+            indexSpan.textContent = `Item ${index + 1}`;
+          }
+        });
+      }
+
+      function removeAdditionalProperty(id) {
+        additionalProperties.delete(id);
+
+        const propContainer = document.querySelector(
+          `.additional-property-container[data-id="${id}"]`,
+        );
+        if (propContainer) {
+          propContainer.remove();
+        }
+      }
+
+      function renderNestedProperties(parentId) {
+        const parentData = additionalProperties.get(parentId);
+        if (
+          !parentData ||
+          !parentData.children ||
+          parentData.children.size === 0
+        )
+          return;
+
+        const container = document.getElementById(
+          `object-children-${parentId}`,
+        );
+        container.innerHTML = "";
+
+        parentData.children.forEach((childData, childId) => {
+          const childElem = document.createElement("div");
+          childElem.className = "nested-property";
+          childElem.dataset.id = childId;
+
+          childElem.innerHTML = `
+            <div class="array-item">
+              <input type="text" value="${childData.key}" placeholder="Property name" class="nested-key" data-parent="${parentId}" data-id="${childId}">
+              <select class="nested-type" data-parent="${parentId}" data-id="${childId}">
+                <option value="string" ${childData.type === "string" ? "selected" : ""}>String</option>
+                <option value="number" ${childData.type === "number" ? "selected" : ""}>Number</option>
+                <option value="boolean" ${childData.type === "boolean" ? "selected" : ""}>Boolean</option>
+                <option value="object" ${childData.type === "object" ? "selected" : ""}>Object</option>
+                <option value="array" ${childData.type === "array" ? "selected" : ""}>Array</option>
+              </select>
+              <button type="button" class="secondary" onclick="removeNestedProperty('${parentId}', '${childId}')">Remove</button>
+            </div>
+            <div id="nested-value-${childId}" class="nested-value-container">
+              <!-- Value input will be added dynamically -->
+            </div>
+          `;
+
+          container.appendChild(childElem);
+
+          // Set up event listeners
+          const keyInput = childElem.querySelector(".nested-key");
+          keyInput.addEventListener("input", (e) => {
+            childData.key = e.target.value;
+            parentData.children.set(childId, childData);
+          });
+
+          const typeSelect = childElem.querySelector(".nested-type");
+          typeSelect.addEventListener("change", (e) => {
+            childData.type = e.target.value;
+            updateNestedValueInput(parentId, childId, e.target.value);
+            parentData.children.set(childId, childData);
+          });
+
+          // Initialize value input based on type
+          updateNestedValueInput(parentId, childId, childData.type);
+        });
+      }
+
+      function renderArrayItems(parentId) {
+        const parentData = additionalProperties.get(parentId);
+        if (
+          !parentData ||
+          !parentData.children ||
+          parentData.children.size === 0
+        )
+          return;
+
+        const container = document.getElementById(`array-children-${parentId}`);
+        container.innerHTML = "";
+
+        let index = 1;
+        parentData.children.forEach((childData, childId) => {
+          const childElem = document.createElement("div");
+          childElem.className = "nested-property";
+          childElem.dataset.id = childId;
+
+          childElem.innerHTML = `
+            <div class="array-item">
+              <span class="property-path">Item ${index}</span>
+              <select class="nested-type" data-parent="${parentId}" data-id="${childId}">
+                <option value="string" ${childData.type === "string" ? "selected" : ""}>String</option>
+                <option value="number" ${childData.type === "number" ? "selected" : ""}>Number</option>
+                <option value="boolean" ${childData.type === "boolean" ? "selected" : ""}>Boolean</option>
+                <option value="object" ${childData.type === "object" ? "selected" : ""}>Object</option>
+                <option value="array" ${childData.type === "array" ? "selected" : ""}>Array</option>
+              </select>
+              <button type="button" class="secondary" onclick="removeArrayItem('${parentId}', '${childId}')">Remove</button>
+            </div>
+            <div id="nested-value-${childId}" class="nested-value-container">
+              <!-- Value input will be added dynamically -->
+            </div>
+          `;
+
+          container.appendChild(childElem);
+
+          // Set up event listeners
+          const typeSelect = childElem.querySelector(".nested-type");
+          typeSelect.addEventListener("change", (e) => {
+            childData.type = e.target.value;
+            updateNestedValueInput(parentId, childId, e.target.value);
+            parentData.children.set(childId, childData);
+          });
+
+          // Initialize value input based on type
+          updateNestedValueInput(parentId, childId, childData.type);
+
+          index++;
+        });
+      }
+
+      function initializeAdditionalProperties(task) {
+        // Clear existing additional properties
+        additionalProperties = new Map();
+        const container = document.getElementById("additionalProperties");
+        if (container) {
+          container.innerHTML = "";
+        }
+
+        // Find custom properties that aren't part of the standard task properties
+        const additionalProps = findAdditionalProperties(task);
+
+        // Create UI elements for each additional property
+        additionalProps.forEach((prop) => {
+          addAdditionalPropertyWithValue(prop.path, prop.value);
+        });
+      }
+
+      function findAdditionalProperties(task, prefix = "", result = []) {
+        // List of standard top-level properties to exclude
+        const standardProps = [
+          "label",
+          "type",
+          "command",
+          "detail",
+          "isBackground",
+          "options",
+          "presentation",
+          "problemMatcher",
+          "group",
+          "dependsOn",
+          "dependsOrder",
+          "runOptions",
+        ];
+
+        // List of standard nested properties
+        const standardNestedProps = {
+          options: ["cwd", "env", "shell"],
+          "options.shell": ["executable", "args"],
+          presentation: [
+            "echo",
+            "reveal",
+            "focus",
+            "panel",
+            "showReuseMessage",
+            "clear",
+            "group",
+          ],
+          group: ["kind", "isDefault"],
+          runOptions: ["reevaluateOnRerun", "runOn", "instanceLimit"],
+        };
+
+        if (typeof task !== "object" || task === null) {
+          return result;
+        }
+
+        for (const [key, value] of Object.entries(task)) {
+          const path = prefix ? `${prefix}.${key}` : key;
+
+          // Skip standard properties at the root level
+          if (!prefix && standardProps.includes(key)) {
+            continue;
+          }
+
+          // Skip standard nested properties
+          if (
+            prefix &&
+            standardNestedProps[prefix] &&
+            standardNestedProps[prefix].includes(key)
+          ) {
+            continue;
+          }
+
+          // Handle objects recursively
+          if (
+            typeof value === "object" &&
+            value !== null &&
+            !Array.isArray(value)
+          ) {
+            findAdditionalProperties(value, path, result);
+          } else {
+            result.push({ path, value });
+          }
+        }
+
+        return result;
+      }
+
+      function addAdditionalPropertyWithValue(path, value) {
+        const container = document.getElementById("additionalProperties");
+        const id =
+          Date.now().toString() + Math.random().toString(36).substring(2, 9);
+
+        const propContainer = document.createElement("div");
+        propContainer.className = "additional-property-container";
+        propContainer.dataset.id = id;
+
+        // Determine the type of the value
+        let type = typeof value;
+        if (Array.isArray(value)) {
+          type = "array";
+        } else if (type === "object" && value !== null) {
+          type = "object";
+        }
+
+        propContainer.innerHTML = `
+          <div>
+            <label class="setting-item-label" for="prop-key-${id}">Property Name/Path</label>
+            <div class="setting-item-description">
+              Use dot notation for nested properties (e.g., options.myCustomProperty)
+            </div>
+            <input type="text" id="prop-key-${id}" value="${path}" placeholder="Property name/path" class="prop-key">
+          </div>
+
+          <div class="property-type-selector">
+            <button type="button" class="secondary property-type-btn" data-type="string" data-id="${id}" onclick="setPropertyType('${id}', 'string')">String</button>
+            <button type="button" class="secondary property-type-btn" data-type="number" data-id="${id}" onclick="setPropertyType('${id}', 'number')">Number</button>
+            <button type="button" class="secondary property-type-btn" data-type="boolean" data-id="${id}" onclick="setPropertyType('${id}', 'boolean')">Boolean</button>
+            <button type="button" class="secondary property-type-btn" data-type="object" data-id="${id}" onclick="setPropertyType('${id}', 'object')">Object</button>
+            <button type="button" class="secondary property-type-btn" data-type="array" data-id="${id}" onclick="setPropertyType('${id}', 'array')">Array</button>
+          </div>
+
+          <div id="prop-value-container-${id}">
+            <!-- Value input will be inserted here dynamically -->
+          </div>
+
+          <div style="margin-top: 10px;">
+            <button type="button" class="secondary" onclick="removeAdditionalProperty('${id}')">Remove Property</button>
+          </div>
+        `;
+
+        container.appendChild(propContainer);
+
+        // Initialize property data
+        additionalProperties.set(id, {
+          key: path,
+          type: type,
+          value: value,
+          children: new Map(),
+        });
+
+        // Set up event listener for property key
+        const keyInput = document.getElementById(`prop-key-${id}`);
+        keyInput.addEventListener("input", (e) => {
+          const propData = additionalProperties.get(id);
+          if (propData) {
+            propData.key = e.target.value;
+            additionalProperties.set(id, propData);
+          }
+        });
+
+        // Set the type and initialize the value input
+        setPropertyType(id, type);
+
+        // Set the value after initializing the input
+        setTimeout(() => {
+          const propData = additionalProperties.get(id);
+          if (propData) {
+            propData.value = value;
+
+            // Update the UI based on the type
+            switch (type) {
+              case "string":
+                document.getElementById(`prop-value-${id}`).value = value;
+                break;
+
+              case "number":
+                document.getElementById(`prop-value-${id}`).value = value;
+                break;
+
+              case "boolean":
+                document.getElementById(`prop-value-${id}`).checked = value;
+                break;
+
+              case "object":
+                // Handle object properties
+                if (value && typeof value === "object") {
+                  for (const [key, val] of Object.entries(value)) {
+                    const childId =
+                      Date.now().toString() +
+                      Math.random().toString(36).substring(2, 9);
+                    propData.children.set(childId, {
+                      key: key,
+                      type: typeof val,
+                      value: val,
+                    });
+                  }
+                  renderNestedProperties(id);
+                }
+                break;
+
+              case "array":
+                // Handle array items
+                if (Array.isArray(value)) {
+                  value.forEach((item, index) => {
+                    const childId =
+                      Date.now().toString() +
+                      Math.random().toString(36).substring(2, 9);
+                    propData.children.set(childId, {
+                      index: index,
+                      type: "string",
+                      value: item,
+                    });
+                  });
+                  renderArrayItems(id);
+                }
+                break;
+            }
+
+            additionalProperties.set(id, propData);
+          }
+        }, 10);
+      }
+
+      function cleanObject(obj) {
+        for (const key in obj) {
+          if (obj[key] === null || obj[key] === undefined || obj[key] === "") {
+            delete obj[key];
+          } else if (typeof obj[key] === "object") {
+            cleanObject(obj[key]); // Recursively clean nested objects
+            // Remove empty objects
+            if (Object.keys(obj[key]).length === 0) {
+              delete obj[key];
+            }
+          }
+        }
+        return obj;
+      }
+
+      function mergeAdditionalProperties(taskData, additionalProps) {
+        // Create a deep copy of the task data
+        const result = JSON.parse(JSON.stringify(taskData));
+
+        // Process each additional property
+        for (const [path, value] of Object.entries(additionalProps)) {
+          // Handle dot notation paths
+          const parts = path.split(".");
+          let current = result;
+
+          // Navigate to the appropriate nested object
+          for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (!current[part] || typeof current[part] !== "object") {
+              current[part] = {};
+            }
+            current = current[part];
+          }
+
+          // Set the value on the final property
+          const lastPart = parts[parts.length - 1];
+          current[lastPart] = value;
+        }
+
+        return result;
+      }
     </script>
   </body>
 </html>
