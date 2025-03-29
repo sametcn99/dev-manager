@@ -137,6 +137,11 @@
         "command": "dev-manager.runTask",
         "title": "Run Task",
         "icon": "$(play)"
+      },
+      {
+        "command": "dev-manager.refreshTasks",
+        "title": "Refresh Tasks",
+        "icon": "$(refresh)"
       }
     ],
     "menus": {
@@ -148,6 +153,11 @@
         },
         {
           "command": "dev-manager.createTask",
+          "when": "view == devManagerTasks",
+          "group": "navigation@1"
+        },
+        {
+          "command": "dev-manager.refreshTasks",
           "when": "view == devManagerTasks",
           "group": "navigation@1"
         }
