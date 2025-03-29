@@ -1,21 +1,17 @@
 import * as vscode from "vscode";
-import { ProjectTreeProvider } from "../providers/ProjectTreeProvider";
 import { TasksTreeProvider } from "../providers/TasksTreeProvider";
 import { TaskService } from "../services/TaskService";
 import { TaskWebView } from "../views/TaskWebView";
 
 export class TaskCommandHandler {
   private taskService: TaskService;
-  private projectTreeProvider: ProjectTreeProvider;
   private tasksTreeProvider: TasksTreeProvider;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    projectTreeProvider: ProjectTreeProvider,
     tasksTreeProvider: TasksTreeProvider,
   ) {
     this.taskService = new TaskService();
-    this.projectTreeProvider = projectTreeProvider;
     this.tasksTreeProvider = tasksTreeProvider;
   }
 
@@ -44,13 +40,10 @@ export class TaskCommandHandler {
         cancellable: false,
       },
       async () => {
-        const projects = await this.projectTreeProvider.getAllProjects();
-        const projectPaths = projects.map((p) => p.path);
         new TaskWebView(
           this.context.extensionUri,
           this.taskService,
           this.tasksTreeProvider,
-          projectPaths,
         );
       },
     );

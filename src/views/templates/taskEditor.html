@@ -331,23 +331,18 @@
               Working Directory & Environment
             </div>
             <div class="setting-item">
-              <label class="setting-item-label" for="cwdSelect"
+              <label class="setting-item-label" for="cwd"
                 >Working Directory</label
               >
               <div class="setting-item-description">
                 The directory from which the task command should be executed.
+                Use ${workspaceFolder} to reference the workspace root.
               </div>
-              <select id="cwdSelect" onchange="handleCwdSelection()">
-                <option value="custom">Custom Path</option>
-                <!-- Project paths will be populated dynamically -->
-              </select>
-              <div id="customCwdInput" style="margin-top: 8px; display: block">
-                <input
-                  type="text"
-                  id="cwd"
-                  placeholder="${workspaceFolder}/subfolder"
-                />
-              </div>
+              <input
+                type="text"
+                id="cwd"
+                placeholder="${workspaceFolder}/subfolder"
+              />
             </div>
 
             <div class="setting-item">
@@ -658,19 +653,6 @@
           }
         });
       });
-
-      function handleCwdSelection() {
-        const select = document.getElementById("cwdSelect");
-        const customInput = document.getElementById("customCwdInput");
-        const cwdInput = document.getElementById("cwd");
-
-        if (select.value === "custom") {
-          customInput.style.display = "block";
-        } else {
-          customInput.style.display = "none";
-          cwdInput.value = select.value;
-        }
-      }
 
       function addProblemMatcher() {
         const select = document.getElementById("problemMatcherSelect");
@@ -1005,36 +987,6 @@
                   message.task.runOptions.runOn || "default";
                 document.getElementById("instanceLimit").value =
                   message.task.runOptions.instanceLimit || "";
-              }
-            }
-
-            // Initialize project paths in the dropdown
-            if (message.projectPaths) {
-              const select = document.getElementById("cwdSelect");
-              const projectPaths = message.projectPaths || [];
-
-              // Add project paths to the dropdown
-              projectPaths.forEach((path) => {
-                const option = document.createElement("option");
-                option.value = path;
-                option.textContent = path;
-                select.appendChild(option);
-              });
-
-              // If editing an existing task, select the current working directory
-              if (message.task?.options?.cwd) {
-                const cwdValue = message.task.options.cwd;
-                const matchingOption = Array.from(select.options).find(
-                  (opt) => opt.value === cwdValue,
-                );
-
-                if (matchingOption) {
-                  select.value = cwdValue;
-                } else {
-                  select.value = "custom";
-                  document.getElementById("cwd").value = cwdValue;
-                }
-                handleCwdSelection();
               }
             }
             break;

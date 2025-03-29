@@ -47,7 +47,6 @@ export class CommandHandlers {
     );
     this.taskCommandHandler = new TaskCommandHandler(
       context,
-      projectTreeProvider,
       tasksTreeProvider,
     );
     this.licenseCommandHandler = new LicenseCommandHandler(projectTreeProvider);

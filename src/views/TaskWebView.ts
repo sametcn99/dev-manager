@@ -14,7 +14,6 @@ export class TaskWebView {
     extensionUri: vscode.Uri,
     private taskService: TaskService,
     private tasksTreeProvider: TasksTreeProvider,
-    private projectPaths?: string[],
   ) {
     this._extensionUri = extensionUri;
 
@@ -45,7 +44,6 @@ export class TaskWebView {
         this._panel.webview.postMessage({
           type: "init",
           task: null,
-          projectPaths: this.projectPaths || [],
         });
       },
     );
