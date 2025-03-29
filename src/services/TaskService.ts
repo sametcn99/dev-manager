@@ -189,14 +189,29 @@ export class TaskService {
   }
 
   async deleteTask(task: vscode.TaskDefinition): Promise<void> {
-    const wsConfig = vscode.workspace.getConfiguration("tasks");
-    const tasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
-    const updatedTasks = tasks.filter((t) => t.label !== task.label);
-    await wsConfig.update(
-      "tasks",
-      updatedTasks,
-      vscode.ConfigurationTarget.WorkspaceFolder,
-    );
+    // Find which workspace folder contains this task
+    const workspaceFolders = vscode.workspace.workspaceFolders || [];
+
+    for (const folder of workspaceFolders) {
+      const wsConfig = vscode.workspace.getConfiguration("tasks", folder.uri);
+      const tasks = wsConfig.get("tasks", []) as vscode.TaskDefinition[];
+
+      // Check if this folder contains the task we want to delete
+      const taskExists = tasks.some((t) => t.label === task.label);
+
+      if (taskExists) {
+        const updatedTasks = tasks.filter((t) => t.label !== task.label);
+        await wsConfig.update(
+          "tasks",
+          updatedTasks,
+          vscode.ConfigurationTarget.WorkspaceFolder,
+        );
+        return; // Task found and deleted, exit the function
+      }
+    }
+
+    // If we get here, the task wasn't found in any workspace folder
+    throw new Error(`Task "${task.label}" not found in any workspace folder`);
   }
 
   async editTask(
