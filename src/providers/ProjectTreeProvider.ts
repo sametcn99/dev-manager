@@ -140,54 +140,6 @@ export class ProjectTreeProvider
     return [];
   }
 
-  private async findParent(
-    child: vscode.TreeItem,
-    path: vscode.TreeItem[],
-  ): Promise<vscode.TreeItem | undefined> {
-    for (const project of this.projects) {
-      const parentProject = this.findParentProject(project.path);
-      const projectItem = new ProjectTreeItem(
-        project.name,
-        project.path,
-        project.packageManager,
-        vscode.TreeItemCollapsibleState.Expanded,
-        parentProject,
-      );
-
-      // If we're looking for a project's direct child
-      if (path.length === 0) {
-        const children = await this.getChildren(projectItem);
-        if (children.some((item) => item.label === child.label)) {
-          return projectItem;
-        }
-      }
-      // If we're looking within a project's tree
-      else if (path[0].label === projectItem.label) {
-        let currentParent: vscode.TreeItem = projectItem;
-        let currentPath = path.slice(1);
-
-        // Walk down the saved path to find the immediate parent
-        for (const pathItem of currentPath) {
-          const children = await this.getChildren(currentParent);
-          const nextParent = children.find(
-            (item) => item.label === pathItem.label,
-          );
-          if (!nextParent) {
-            return undefined;
-          }
-          currentParent = nextParent;
-        }
-
-        // Check if the child belongs to the currentParent
-        const children = await this.getChildren(currentParent);
-        if (children.some((item) => item.label === child.label)) {
-          return currentParent;
-        }
-      }
-    }
-    return undefined;
-  }
-
   public async getAllProjects(): Promise<ProjectInfo[]> {
     if (this.projects.length === 0) {
       this.projects = await this.projectService.scanWorkspace();

@@ -57,16 +57,6 @@
         "icon": "$(trash)"
       },
       {
-        "command": "dev-manager.installAllDependencies",
-        "title": "Install All Dependencies",
-        "icon": "$(cloud-download)"
-      },
-      {
-        "command": "dev-manager.updateAllDependencies",
-        "title": "Update All Dependencies",
-        "icon": "$(arrow-up)"
-      },
-      {
         "command": "dev-manager.changePackageManager",
         "title": "Change Package Manager"
       },
@@ -155,21 +145,6 @@
           "command": "dev-manager.refreshProjects",
           "when": "view == devManagerProjects",
           "group": "navigation@1"
-        },
-        {
-          "command": "dev-manager.analyzeDependenciesSizes",
-          "when": "view == devManagerProjects",
-          "group": "navigation@2"
-        },
-        {
-          "command": "dev-manager.installAllDependencies",
-          "when": "view == devManagerProjects",
-          "group": "2_modification"
-        },
-        {
-          "command": "dev-manager.updateAllDependencies",
-          "when": "view == devManagerProjects",
-          "group": "2_modification"
         },
         {
           "command": "dev-manager.createTask",
